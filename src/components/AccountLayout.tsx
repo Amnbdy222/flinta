@@ -63,7 +63,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
 
         {/* MOBILE HORIZONTAL SCROLLABLE NAV */}
         <nav
-          className="lg:hidden flex overflow-x-auto no-scrollbar hairline-b bg-white -mx-3 px-3 sm:mx-0 sm:px-0"
+          className="lg:hidden flex overflow-x-auto no-scrollbar hairline-b bg-white -mx-3 px-3 sm:mx-0 sm:px-0 items-center"
           aria-label="Account navigation"
         >
           {navMenuItems.map((item) => {
@@ -82,6 +82,14 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
               </Link>
             );
           })}
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 text-[0.6rem] sm:text-[0.65rem] tracking-[0.18em] font-medium uppercase whitespace-nowrap text-red-700 hover:text-red-900 border-b-2 border-transparent flex items-center space-x-1 cursor-pointer"
+          >
+            <LogOut size={12} className="inline mr-1 shrink-0" />
+            <span>LOG OUT</span>
+          </button>
         </nav>
 
         {/* DESKTOP 2-COLUMN LAYOUT */}

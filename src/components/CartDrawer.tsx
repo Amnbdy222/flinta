@@ -44,6 +44,30 @@ export const CartDrawer: React.FC = () => {
     fetchActiveCoupons().then(setAvailableCoupons).catch(() => {});
   }, []);
 
+  // Prevent background page scrolling on mobile and desktop when cart drawer is open
+  useEffect(() => {
+    if (isCartOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [isCartOpen]);
+
+  // Close cart drawer on ESC key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isCartOpen) closeCart();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCartOpen, closeCart]);
+
   const handleApplyCouponSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponInput.trim()) return;
@@ -91,7 +115,7 @@ export const CartDrawer: React.FC = () => {
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
         {/* DRAWER CONTAINER */}
-        <div className="relative w-full max-w-md bg-[#FAF9F6] h-full shadow-2xl flex flex-col justify-between z-10 animate-fade-in">
+        <div className="relative w-full max-w-md bg-[#FAF9F6] h-full shadow-2xl flex flex-col justify-between z-10 animate-fade-in touch-auto">
           {/* DRAWER HEADER */}
           <div className="py-5 px-5 sm:px-6 md:px-8 hairline-b flex items-center justify-between bg-[#FAF9F6]">
             <div className="flex items-center space-x-2 sm:space-x-3">
@@ -103,7 +127,7 @@ export const CartDrawer: React.FC = () => {
             <button
               type="button"
               onClick={closeCart}
-              className="p-2 -mr-1 text-[#0A0A0A] hover:opacity-60 transition-opacity focus:outline-none"
+              className="p-2 -mr-1 text-[#0A0A0A] hover:opacity-60 transition-opacity focus:outline-none cursor-pointer"
               aria-label="Close cart drawer"
             >
               <X size={20} strokeWidth={1.5} />
@@ -140,7 +164,7 @@ export const CartDrawer: React.FC = () => {
           )}
 
           {/* DRAWER CONTENT */}
-          <div className="flex-1 overflow-y-auto px-5 sm:px-6 md:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6">
+          <div className="flex-1 overflow-y-auto px-5 sm:px-6 md:px-8 py-5 sm:py-6 space-y-5 sm:space-y-6 touch-pan-y">
             {loading ? (
               <div className="py-20 text-center text-xs tracking-widest uppercase text-[#736E65]">
                 LOADING SELECTION...
@@ -174,7 +198,7 @@ export const CartDrawer: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => removeItem(item.id)}
-                            className="text-[#736E65] hover:text-[#0A0A0A] p-1 transition-colors"
+                            className="text-[#736E65] hover:text-[#0A0A0A] p-1 transition-colors cursor-pointer"
                             aria-label={`Remove ${item.product_name}`}
                           >
                             <Trash2 size={14} strokeWidth={1.5} />
@@ -194,7 +218,7 @@ export const CartDrawer: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => updateQuantity(item.id, item.quantity - 1, item.max_stock)}
-                            className="px-2 py-1 text-[#0A0A0A] hover:bg-[#0A0A0A]/5 transition-colors"
+                            className="px-2 py-1 text-[#0A0A0A] hover:bg-[#0A0A0A]/5 transition-colors cursor-pointer"
                             aria-label="Decrease quantity"
                           >
                             <Minus size={12} />
@@ -206,7 +230,7 @@ export const CartDrawer: React.FC = () => {
                             type="button"
                             disabled={item.quantity >= item.max_stock}
                             onClick={() => updateQuantity(item.id, item.quantity + 1, item.max_stock)}
-                            className="px-2 py-1 text-[#0A0A0A] hover:bg-[#0A0A0A]/5 disabled:opacity-30 disabled:pointer-events-none transition-colors"
+                            className="px-2 py-1 text-[#0A0A0A] hover:bg-[#0A0A0A]/5 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
                             aria-label="Increase quantity"
                           >
                             <Plus size={12} />
@@ -282,7 +306,7 @@ export const CartDrawer: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setShowCouponList(!showCouponList)}
-                      className="text-[0.65rem] font-medium tracking-wider text-[#736E65] hover:text-[#0A0A0A] flex items-center justify-between w-full py-1"
+                      className="text-[0.65rem] font-medium tracking-wider text-[#736E65] hover:text-[#0A0A0A] flex items-center justify-between w-full py-1 cursor-pointer"
                     >
                       <span>AVAILABLE OFFERS ({availableCoupons.length})</span>
                       {showCouponList ? <ChevronUp size={13} /> : <ChevronDown size={13} />}

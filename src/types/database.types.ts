@@ -218,6 +218,8 @@ export interface Order {
   shipping_pincode: string;
   created_at: string;
   updated_at: string;
+  razorpay_order_id?: string | null;
+  razorpay_payment_id?: string | null;
   order_items?: OrderItem[];
 }
 

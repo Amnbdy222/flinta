@@ -4,9 +4,10 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useStoreSettings } from '../context/StoreSettingsContext';
 import { placeOrderCOD, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
+import { openRazorpayCheckoutFlow } from '../services/razorpayService';
 import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
-import { AlertCircle, ArrowLeft, ArrowRight, ShieldCheck, Truck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
   const { cart, items, subtotal, appliedCoupon, discountAmount, finalTotal, clearCartLocal, refreshCart, loading: cartLoading } = useCart();
@@ -14,8 +15,8 @@ export const CheckoutPage: React.FC = () => {
   const { settings } = useStoreSettings();
   const navigate = useNavigate();
 
-  // Selected Payment Method state
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('cod');
+  // Selected Payment Method state (default to Razorpay Test Mode)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('razorpay');
 
   // Customer & Shipping Form State
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -120,7 +121,51 @@ export const CheckoutPage: React.FC = () => {
     try {
       const createdOrder = await placeOrderCOD(cart.id, shippingData, appliedCoupon?.code);
 
-      // Local optimistic state reset
+      // Handle Razorpay Payment flow
+      if (paymentMethod === 'razorpay') {
+        try {
+          await openRazorpayCheckoutFlow(
+            createdOrder.id,
+            settings.store_name || 'FLINT Apparel Co.',
+            createdOrder.order_number,
+            {
+              name: shippingData.full_name,
+              email: shippingData.email,
+              contact: shippingData.phone,
+            },
+            (paymentId) => {
+              // Server has verified HMAC-SHA256 signature and updated database order to PAID & PROCESSING!
+              createdOrder.payment_method = 'razorpay';
+              createdOrder.payment_status = 'paid';
+              createdOrder.status = 'processing';
+              createdOrder.razorpay_payment_id = paymentId;
+              clearCartLocal();
+              void refreshCart();
+              setCompletedOrder(createdOrder);
+            },
+            () => {
+              // Razorpay modal dismissed / cancelled
+              setIsSubmitting(false);
+              isPlacingOrderRef.current = false;
+              setOrderError('Razorpay test payment was cancelled. Your order remains saved in your account.');
+            },
+            (errorMsg) => {
+              // Server verification or payment error
+              setIsSubmitting(false);
+              isPlacingOrderRef.current = false;
+              setOrderError(errorMsg);
+            }
+          );
+        } catch (rzpErr: unknown) {
+          const msg = rzpErr instanceof Error ? rzpErr.message : 'Razorpay checkout initialization failed.';
+          setOrderError(msg);
+          setIsSubmitting(false);
+          isPlacingOrderRef.current = false;
+        }
+        return;
+      }
+
+      // Local optimistic state reset for COD
       clearCartLocal();
       void refreshCart();
 
@@ -165,7 +210,7 @@ export const CheckoutPage: React.FC = () => {
           <div className="mt-6 bg-red-50 text-red-900 border border-red-900/20 p-4 text-xs flex items-start space-x-3 animate-fade-in">
             <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <span className="font-semibold uppercase tracking-wider block">ORDER ERROR</span>
+              <span className="font-semibold uppercase tracking-wider block">CHECKOUT NOTIFICATION</span>
               <p>{orderError}</p>
             </div>
           </div>
@@ -293,29 +338,78 @@ export const CheckoutPage: React.FC = () => {
                 3. PAYMENT METHOD
               </h2>
 
-              {settings.cod_enabled ? (
-                <label className="flex items-start p-4 border border-[#0A0A0A] bg-white/40 cursor-pointer space-x-4">
+              <div className="space-y-3">
+                {/* RAZORPAY TEST MODE OPTION */}
+                <label
+                  className={`flex items-start p-4 border transition-colors cursor-pointer space-x-4 ${
+                    paymentMethod === 'razorpay'
+                      ? 'border-[#0A0A0A] bg-white shadow-2xs'
+                      : 'border-[#0A0A0A]/20 bg-white/40 hover:border-[#0A0A0A]/40'
+                  }`}
+                >
                   <input
                     type="radio"
                     name="paymentMethod"
-                    value="cod"
-                    checked={paymentMethod === 'cod'}
-                    onChange={() => setPaymentMethod('cod')}
-                    className="mt-1 accent-[#0A0A0A]"
+                    value="razorpay"
+                    checked={paymentMethod === 'razorpay'}
+                    onChange={() => setPaymentMethod('razorpay')}
+                    className="mt-1 accent-[#0A0A0A] cursor-pointer"
                   />
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium tracking-wider uppercase text-[#0A0A0A] block">CASH ON DELIVERY (COD)</span>
+                  <div className="space-y-1.5 flex-1">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-semibold tracking-wider uppercase text-[#0A0A0A] flex items-center space-x-2">
+                        <CreditCard size={14} className="text-[#0A0A0A]" />
+                        <span>ONLINE PAYMENT (RAZORPAY)</span>
+                      </span>
+                      <span className="text-[0.55rem] font-bold tracking-widest text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 uppercase">
+                        TEST MODE ENABLED
+                      </span>
+                    </div>
                     <p className="text-xs text-[#736E65] font-light leading-relaxed">
-                      Pay in cash or by digital scan when your order is delivered.
-                      {settings.cod_extra_charge > 0 && ` (${settings.currency_symbol}${settings.cod_extra_charge.toFixed(2)} COD Handling Fee)`}
+                      Instant payment via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, NetBanking, or Wallets in Razorpay Test Mode.
                     </p>
+                    <div className="flex flex-wrap gap-2 pt-1 text-[0.6rem] font-medium tracking-wider text-[#736E65] uppercase">
+                      <span className="bg-[#FAF9F6] border border-[#0A0A0A]/10 px-2 py-0.5">UPI</span>
+                      <span className="bg-[#FAF9F6] border border-[#0A0A0A]/10 px-2 py-0.5">CARDS</span>
+                      <span className="bg-[#FAF9F6] border border-[#0A0A0A]/10 px-2 py-0.5">NETBANKING</span>
+                      <span className="bg-[#FAF9F6] border border-[#0A0A0A]/10 px-2 py-0.5">WALLETS</span>
+                    </div>
                   </div>
                 </label>
-              ) : (
-                <div className="p-4 border border-amber-900/20 bg-amber-50 text-amber-900 text-xs">
-                  Cash on delivery is currently disabled. Please contact concierge for alternative payment methods.
-                </div>
-              )}
+
+                {/* CASH ON DELIVERY OPTION */}
+                {settings.cod_enabled ? (
+                  <label
+                    className={`flex items-start p-4 border transition-colors cursor-pointer space-x-4 ${
+                      paymentMethod === 'cod'
+                        ? 'border-[#0A0A0A] bg-white shadow-2xs'
+                        : 'border-[#0A0A0A]/20 bg-white/40 hover:border-[#0A0A0A]/40'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="cod"
+                      checked={paymentMethod === 'cod'}
+                      onChange={() => setPaymentMethod('cod')}
+                      className="mt-1 accent-[#0A0A0A] cursor-pointer"
+                    />
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium tracking-wider uppercase text-[#0A0A0A] block">
+                        CASH ON DELIVERY (COD)
+                      </span>
+                      <p className="text-xs text-[#736E65] font-light leading-relaxed">
+                        Pay in cash or digital scan when your order is delivered.
+                        {settings.cod_extra_charge > 0 && ` (${settings.currency_symbol}${settings.cod_extra_charge.toFixed(2)} COD Handling Fee)`}
+                      </p>
+                    </div>
+                  </label>
+                ) : (
+                  <div className="p-4 border border-amber-900/20 bg-amber-50 text-amber-900 text-xs">
+                    Cash on delivery is currently disabled. Please contact concierge for alternative payment methods.
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* MOBILE: Place order CTA */}
@@ -323,15 +417,21 @@ export const CheckoutPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-editorial-primary w-full py-4 text-xs tracking-[0.25em] flex items-center justify-center space-x-2 disabled:opacity-50"
+                className="btn-editorial-primary w-full py-4 text-xs tracking-[0.25em] flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
               >
-                <span>{isSubmitting ? 'PLACING ORDER...' : 'PLACE ORDER'}</span>
+                <span>
+                  {isSubmitting
+                    ? 'PROCESSING PAYMENT...'
+                    : paymentMethod === 'razorpay'
+                    ? 'PROCEED TO RAZORPAY TEST PAYMENT'
+                    : 'PLACE ORDER'}
+                </span>
                 <ArrowRight size={14} />
               </button>
               <div className="flex flex-col gap-1.5 text-[0.65rem] text-[#736E65] uppercase tracking-wider">
                 <div className="flex items-center space-x-2">
                   <ShieldCheck size={13} className="text-[#0A0A0A]" />
-                  <span>SECURE CHECKOUT</span>
+                  <span>256-BIT ENCRYPTED CHECKOUT</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Truck size={13} className="text-[#0A0A0A]" />
@@ -404,7 +504,13 @@ export const CheckoutPage: React.FC = () => {
               disabled={isSubmitting}
               className="btn-editorial-primary w-full py-4 text-xs tracking-[0.25em] flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer"
             >
-              <span>{isSubmitting ? 'PLACING ORDER...' : 'PLACE ORDER'}</span>
+              <span>
+                {isSubmitting
+                  ? 'PROCESSING PAYMENT...'
+                  : paymentMethod === 'razorpay'
+                  ? 'PROCEED TO RAZORPAY TEST PAYMENT'
+                  : 'PLACE ORDER'}
+              </span>
               <ArrowRight size={14} />
             </button>
 

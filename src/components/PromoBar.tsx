@@ -31,45 +31,55 @@ export const PromoBar: React.FC = () => {
   );
 
   const bannerInner = (
-    <div className="relative w-full overflow-hidden group border-y border-[#0A0A0A]/10 bg-[#FAF9F6] my-4 sm:my-6">
+    <div className="relative w-full overflow-hidden group border-y border-[#0A0A0A]/10 bg-[#FAF9F6] my-4 sm:my-8">
       {hasImage && promoBanner ? (
         /* VISUAL ANNOUNCEMENT BANNER WITH UPLOADED IMAGE */
-        <div className="relative w-full bg-[#FAF9F6] flex items-center justify-center overflow-hidden">
-          <picture className="w-full h-auto block">
+        <div className="relative w-full h-36 xs:h-44 sm:h-56 md:h-64 lg:h-72 bg-[#FAF9F6] flex items-center justify-center overflow-hidden">
+          <picture className="w-full h-full block">
             {promoBanner.mobile_image_url && (
               <source media="(max-width: 767px)" srcSet={promoBanner.mobile_image_url} />
             )}
             <img
               src={promoBanner.image_url}
               alt={promoBanner.title || 'Maison Announcement'}
-              className="w-full h-auto max-h-[360px] object-contain sm:object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+              className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.015]"
             />
           </picture>
 
           {/* Subtly overlay custom title only if explicitly provided */}
-          {hasCustomOverlayText && (
+          {hasCustomOverlayText ? (
             <>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
-              <div className="absolute inset-x-0 bottom-0 z-10 container-editorial pb-6 px-6 flex flex-col md:flex-row items-end md:items-center justify-between gap-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent pointer-events-none" />
+              <div className="absolute inset-x-0 bottom-0 z-10 container-editorial pb-4 sm:pb-6 px-4 sm:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-4">
                 <div className="space-y-1 max-w-lg text-left">
-                  <h3 className="font-editorial text-xl sm:text-2xl md:text-3xl font-light uppercase tracking-tight text-[#FAF9F6] drop-shadow-md">
+                  <h3 className="font-editorial text-lg sm:text-2xl md:text-3xl font-light uppercase tracking-tight text-[#FAF9F6] drop-shadow-md">
                     {promoBanner.title}
                   </h3>
                   {promoBanner.subtitle && (
-                    <p className="text-[0.7rem] sm:text-xs tracking-[0.2em] text-[#FAF9F6]/80 font-light uppercase">
+                    <p className="text-[0.65rem] sm:text-xs tracking-[0.2em] text-[#FAF9F6]/80 font-light uppercase">
                       {promoBanner.subtitle}
                     </p>
                   )}
                 </div>
 
                 {promoBanner.link_url && (
-                  <span className="btn-editorial-primary text-[0.65rem] sm:text-xs bg-[#FAF9F6] text-[#0A0A0A] px-5 py-2.5 sm:px-6 sm:py-3 tracking-[0.2em] font-medium uppercase group-hover:bg-[#0A0A0A] group-hover:text-[#FAF9F6] transition-colors flex items-center space-x-2 shrink-0 shadow-xl">
+                  <span className="btn-editorial-primary text-[0.6rem] sm:text-xs bg-[#FAF9F6] text-[#0A0A0A] px-4 py-2 sm:px-6 sm:py-3 tracking-[0.2em] font-medium uppercase group-hover:bg-[#0A0A0A] group-hover:text-[#FAF9F6] transition-colors flex items-center space-x-1.5 sm:space-x-2 shrink-0 shadow-xl">
                     <span>EXPLORE COLLECTION</span>
-                    <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
+                    <ArrowRight size={12} className="transition-transform group-hover:translate-x-1" />
                   </span>
                 )}
               </div>
             </>
+          ) : (
+            /* Floating CTA button for clean image banners */
+            promoBanner.link_url && (
+              <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-10">
+                <span className="btn-editorial-primary text-[0.6rem] sm:text-xs bg-[#0A0A0A]/90 backdrop-blur-md text-[#FAF9F6] px-3.5 py-1.5 sm:px-5 sm:py-2.5 tracking-[0.2em] font-medium uppercase group-hover:bg-[#0A0A0A] transition-colors flex items-center space-x-1.5 shadow-lg border border-white/20">
+                  <span>SHOP NOW</span>
+                  <ArrowRight size={11} className="transition-transform group-hover:translate-x-1" />
+                </span>
+              </div>
+            )
           )}
         </div>
       ) : (
