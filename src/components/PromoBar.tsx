@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { fetchStorefrontBanners } from '../services/bannerService';
 import { StorefrontBanner } from '../types/database.types';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 
 export const PromoBar: React.FC = () => {
+  const { settings } = useStoreSettings();
   const [promoBanner, setPromoBanner] = useState<StorefrontBanner | null>(null);
 
   useEffect(() => {
@@ -15,13 +17,16 @@ export const PromoBar: React.FC = () => {
     });
   }, []);
 
-  if (!promoBanner || !promoBanner.is_active) return null;
+  // Check store settings announcement bar switch
+  if (!settings.announcement_bar_enabled) return null;
 
-  const hasImage = Boolean(promoBanner.image_url && promoBanner.image_url.trim() !== '');
+  const announcementText = settings.announcement_bar_text || `Free shipping on all orders over ${settings.currency_symbol}${settings.free_shipping_threshold}!`;
+
+  const hasImage = Boolean(promoBanner?.image_url && promoBanner.image_url.trim() !== '');
 
   const bannerInner = (
     <div className="relative w-full overflow-hidden group hairline-t hairline-b my-6 sm:my-8">
-      {hasImage ? (
+      {hasImage && promoBanner ? (
         /* VISUAL ANNOUNCEMENT BANNER WITH UPLOADED IMAGE */
         <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-[280px] bg-[#0A0A0A] flex items-center justify-center overflow-hidden">
           <picture className="absolute inset-0 w-full h-full block">
@@ -45,7 +50,7 @@ export const PromoBar: React.FC = () => {
                 </span>
               </div>
               <h3 className="font-editorial text-xl sm:text-2xl md:text-3xl lg:text-4xl font-light uppercase tracking-tight text-[#FAF9F6] drop-shadow-md">
-                {promoBanner.title}
+                {promoBanner.title || announcementText}
               </h3>
               {promoBanner.subtitle && (
                 <p className="text-[0.7rem] sm:text-xs tracking-[0.2em] text-[#FAF9F6]/80 font-light">
@@ -64,24 +69,17 @@ export const PromoBar: React.FC = () => {
         </div>
       ) : (
         /* MINIMALIST EDITORIAL PROMO STRIP */
-        <div className="bg-[#0A0A0A] text-[#FAF9F6] py-4 sm:py-6 px-5 sm:px-6 text-center transition-colors group-hover:bg-[#141414]">
-          <div className="container-editorial flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0 sm:space-x-4 text-[0.7rem] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase font-medium">
-            <span>{promoBanner.title}</span>
-            {promoBanner.subtitle && (
-              <span className="text-[#FAF9F6]/70 font-light sm:before:content-['•'] sm:before:mr-4">
-                {promoBanner.subtitle}
-              </span>
-            )}
-            {promoBanner.link_url && (
-              <ArrowRight size={14} className="transition-transform group-hover:translate-x-1 hidden sm:block" />
-            )}
+        <div className="bg-[#0A0A0A] text-[#FAF9F6] py-3.5 sm:py-5 px-5 sm:px-6 text-center transition-colors group-hover:bg-[#141414]">
+          <div className="container-editorial flex items-center justify-center space-x-3 text-[0.68rem] sm:text-xs tracking-[0.25em] sm:tracking-[0.3em] uppercase font-medium">
+            <Sparkles size={12} className="text-amber-300 shrink-0" />
+            <span>{announcementText}</span>
           </div>
         </div>
       )}
     </div>
   );
 
-  return promoBanner.link_url ? (
+  return promoBanner?.link_url ? (
     <Link to={promoBanner.link_url} className="block w-full z-50 relative">
       {bannerInner}
     </Link>

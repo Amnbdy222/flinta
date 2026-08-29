@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FormattedProduct, ProductVariant } from '../types/database.types';
 import { useCart } from '../context/CartContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { X, Check, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 
 interface QuickViewModalProps {
@@ -12,6 +13,7 @@ interface QuickViewModalProps {
 
 export const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen, onClose }) => {
   const { addToBag } = useCart();
+  const { settings } = useStoreSettings();
 
   const [selectedColor, setSelectedColor] = useState<string>(
     product?.colors[0]?.color_name || ''
@@ -148,7 +150,7 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen,
                 {product.name}
               </Link>
               <p className="text-lg font-light text-[#0A0A0A] tracking-wider">
-                ₹{displayPrice.toFixed(2)}
+                {settings.currency_symbol}{displayPrice.toFixed(2)}
               </p>
             </div>
 

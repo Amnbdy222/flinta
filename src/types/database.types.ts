@@ -331,3 +331,37 @@ export interface Review {
     avatar_url?: string | null;
   } | null;
 }
+
+export interface StoreSettings {
+  id: number;
+  store_name: string;
+  tagline: string | null;
+  support_email: string;
+  support_phone: string;
+  currency: string;
+  currency_symbol: string;
+  gst_number: string | null;
+  company_address: string | null;
+  free_shipping_threshold: number;
+  flat_shipping_rate: number;
+  cod_enabled: boolean;
+  cod_extra_charge: number;
+  return_policy_days: number;
+  exchange_policy_days: number;
+  is_returns_enabled: boolean;
+  is_exchanges_enabled: boolean;
+  announcement_bar_enabled: boolean;
+  announcement_bar_text: string | null;
+  maintenance_mode: boolean;
+  social_links: {
+    twitter?: string;
+    youtube?: string;
+    facebook?: string;
+    instagram?: string;
+  };
+  extra_config?: Record<string, unknown>;
+  updated_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+

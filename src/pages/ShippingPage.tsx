@@ -1,6 +1,9 @@
 import React from 'react';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 
 export const ShippingPage: React.FC = () => {
+  const { settings } = useStoreSettings();
+
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-32 pb-24 text-[#0A0A0A]">
       <div className="container-editorial max-w-3xl mx-auto space-y-12">
@@ -13,25 +16,36 @@ export const ShippingPage: React.FC = () => {
 
         <div className="space-y-8 text-xs font-light text-[#383531] leading-relaxed">
           <div className="space-y-2">
-            <h2 className="font-editorial text-2xl text-[#0A0A0A]">EXPRESS GLOBAL DISPATCH</h2>
+            <h2 className="font-editorial text-2xl text-[#0A0A0A]">EXPRESS DISPATCH</h2>
             <p>
-              All FLINT garments are packed in eco-conscious, recyclable archival boxes. Orders placed before 14:00 CET are dispatched on the same business day from our distribution facility.
+              All {settings.store_name} garments are packed in eco-conscious, recyclable archival boxes. Orders placed before 14:00 are dispatched on the same business day from our main fulfillment center.
             </p>
           </div>
 
           <div className="space-y-2 pt-4 hairline-t">
-            <h2 className="font-editorial text-2xl text-[#0A0A0A]">DELIVERY TIMELINES</h2>
+            <h2 className="font-editorial text-2xl text-[#0A0A0A]">DELIVERY RATES & THRESHOLDS</h2>
             <ul className="list-disc pl-5 space-y-2">
-              <li>Standard Domestic Courier (3-5 Business Days): Complimentary</li>
-              <li>Express Priority Air (1-2 Business Days): $25.00 USD</li>
-              <li>International Express Air (2-4 Business Days): $35.00 USD</li>
+              <li>
+                Orders of {settings.currency_symbol}{settings.free_shipping_threshold} or more:{' '}
+                <strong className="font-medium text-[#0A0A0A]">COMPLIMENTARY FREE SHIPPING</strong>
+              </li>
+              <li>
+                Standard Shipping (Below {settings.currency_symbol}{settings.free_shipping_threshold}):{' '}
+                <strong className="font-medium text-[#0A0A0A]">{settings.currency_symbol}{settings.flat_shipping_rate.toFixed(2)}</strong>
+              </li>
+              {settings.cod_enabled && (
+                <li>
+                  Cash on Delivery (COD): Available
+                  {settings.cod_extra_charge > 0 && ` (${settings.currency_symbol}${settings.cod_extra_charge.toFixed(2)} handling fee)`}
+                </li>
+              )}
             </ul>
           </div>
 
           <div className="space-y-2 pt-4 hairline-t">
             <h2 className="font-editorial text-2xl text-[#0A0A0A]">DUTIES & TAXES</h2>
             <p>
-              All international shipments are sent Delivery Duty Paid (DDP). All relevant import duties and local taxes are calculated and included at checkout.
+              All shipments are sent fully insured. GST and applicable local taxes are calculated and included at checkout.
             </p>
           </div>
         </div>

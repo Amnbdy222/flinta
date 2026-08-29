@@ -9,6 +9,7 @@ import { SEO } from '../components/SEO';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { HeroSkeleton } from '../components/LoadingSkeleton';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { useCart } from '../context/CartContext';
 import { formatUserFriendlyError } from '../services/cartService';
 import { ArrowLeft, Check, Heart, ShieldCheck, RefreshCw, Truck, AlertCircle } from 'lucide-react';
@@ -16,6 +17,7 @@ import { ArrowLeft, Check, Heart, ShieldCheck, RefreshCw, Truck, AlertCircle } f
 export const ProductDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { settings } = useStoreSettings();
   const { addToBag } = useCart();
 
   // Primary Component States
@@ -256,11 +258,11 @@ export const ProductDetailPage: React.FC = () => {
               </h1>
               <div className="flex items-baseline space-x-3 sm:space-x-4 pt-1">
                 <span className="text-xl sm:text-2xl font-light text-[#0A0A0A] tracking-wider">
-                  ₹{displayPrice ? displayPrice.toFixed(2) : '0.00'}
+                  {settings.currency_symbol}{displayPrice ? displayPrice.toFixed(2) : '0.00'}
                 </span>
                 {displayComparePrice && displayComparePrice > displayPrice && (
                   <span className="text-sm font-light text-[#736E65] line-through">
-                    ₹{displayComparePrice.toFixed(2)}
+                    {settings.currency_symbol}{displayComparePrice.toFixed(2)}
                   </span>
                 )}
               </div>
@@ -413,7 +415,11 @@ export const ProductDetailPage: React.FC = () => {
               </div>
               <div className="flex items-start space-x-3">
                 <Truck size={15} className="text-[#0A0A0A] flex-shrink-0 mt-0.5" />
-                <span>EXPRESS COMPLIMENTARY SHIPPING & 14-DAY RETURNS</span>
+                <span>
+                  COMPLIMENTARY SHIPPING OVER {settings.currency_symbol}{settings.free_shipping_threshold}
+                  {settings.is_returns_enabled ? ` · EASY ${settings.return_policy_days}-DAY RETURNS` : ''}
+                  {settings.is_exchanges_enabled ? ` · ${settings.exchange_policy_days}-DAY EXCHANGES` : ''}
+                </span>
               </div>
             </div>
           </div>

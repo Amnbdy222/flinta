@@ -11,6 +11,7 @@ import { EmptyState } from '../components/EmptyState';
 import { ReturnModal } from '../components/ReturnModal';
 import { ExchangeModal } from '../components/ExchangeModal';
 import { CancelOrderModal } from '../components/CancelOrderModal';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import {
   ArrowLeft,
   MapPin,
@@ -27,6 +28,7 @@ import { AccountLayout } from '../components/AccountLayout';
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { settings } = useStoreSettings();
   const [order, setOrder] = useState<Order | null>(null);
   const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
   const [exchangeRequests, setExchangeRequests] = useState<ExchangeRequest[]>([]);
@@ -438,24 +440,24 @@ export const OrderDetailPage: React.FC = () => {
             <div className="space-y-2 text-xs font-light text-[#383531]">
               <div className="flex justify-between">
                 <span className="text-[0.62rem] sm:text-[0.65rem] tracking-[0.18em] uppercase text-[#736E65]">SUBTOTAL</span>
-                <span className="tracking-wider text-[#0A0A0A]">₹{Number(order.subtotal).toFixed(2)}</span>
+                <span className="tracking-wider text-[#0A0A0A]">{settings.currency_symbol}{Number(order.subtotal).toFixed(2)}</span>
               </div>
               {Number(order.discount_amount) > 0 && (
                 <div className="flex justify-between text-emerald-900">
                   <span className="text-[0.62rem] sm:text-[0.65rem] tracking-[0.18em] uppercase font-medium">DISCOUNT</span>
-                  <span className="tracking-wider font-medium">-₹{Number(order.discount_amount).toFixed(2)}</span>
+                  <span className="tracking-wider font-medium">-{settings.currency_symbol}{Number(order.discount_amount).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between">
                 <span className="text-[0.62rem] sm:text-[0.65rem] tracking-[0.18em] uppercase text-[#736E65]">SHIPPING</span>
                 <span className="tracking-wider text-[#0A0A0A]">
-                  {Number(order.shipping_amount) === 0 ? 'COMPLIMENTARY' : `₹${Number(order.shipping_amount).toFixed(2)}`}
+                  {Number(order.shipping_amount) === 0 ? 'COMPLIMENTARY' : `${settings.currency_symbol}${Number(order.shipping_amount).toFixed(2)}`}
                 </span>
               </div>
               <div className="pt-2.5 hairline-t flex justify-between items-baseline">
                 <span className="text-[0.68rem] sm:text-[0.7rem] font-semibold tracking-[0.2em] uppercase text-[#0A0A0A]">TOTAL AMOUNT</span>
                 <span className="text-base sm:text-xl font-semibold text-[#0A0A0A] tracking-wider">
-                  ₹{Number(order.total_amount).toFixed(2)}
+                  {settings.currency_symbol}{Number(order.total_amount).toFixed(2)}
                 </span>
               </div>
             </div>

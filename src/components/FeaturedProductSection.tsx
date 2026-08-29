@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FormattedProduct } from '../types/database.types';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { ArrowRight, Check } from 'lucide-react';
 
 interface FeaturedProductSectionProps {
@@ -8,6 +9,7 @@ interface FeaturedProductSectionProps {
 }
 
 export const FeaturedProductSection: React.FC<FeaturedProductSectionProps> = ({ product }) => {
+  const { settings } = useStoreSettings();
   const [selectedColor, setSelectedColor] = useState(
     product.colors[0]?.color_name || 'Primary'
   );
@@ -52,11 +54,11 @@ export const FeaturedProductSection: React.FC<FeaturedProductSectionProps> = ({ 
               </h3>
               <div className="flex items-baseline space-x-4 pt-1">
                 <span className="text-xl font-light text-[#0A0A0A] tracking-wider">
-                  ₹{product.price ? product.price.toFixed(2) : '0.00'}
+                  {settings.currency_symbol}{product.price ? product.price.toFixed(2) : '0.00'}
                 </span>
                 {product.compareAtPrice && product.compareAtPrice > product.price && (
                   <span className="text-sm font-light text-[#736E65] line-through">
-                    ₹{product.compareAtPrice.toFixed(2)}
+                    {settings.currency_symbol}{product.compareAtPrice.toFixed(2)}
                   </span>
                 )}
               </div>

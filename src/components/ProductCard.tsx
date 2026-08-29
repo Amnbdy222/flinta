@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, Eye } from 'lucide-react';
 import { FormattedProduct } from '../types/database.types';
 import { useWishlist } from '../context/WishlistContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { QuickViewModal } from './QuickViewModal';
 
 interface ProductCardProps {
@@ -14,6 +15,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   aspectRatio = 'editorial',
 }) => {
+  const { settings } = useStoreSettings();
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0);
   const [isHovered, setIsHovered] = useState(false);
   const [quickViewOpen, setQuickViewOpen] = useState(false);
@@ -158,7 +160,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {product.name}
             </Link>
             <span className="text-[0.7rem] sm:text-xs font-light text-[#0A0A0A] tracking-wider whitespace-nowrap flex-shrink-0">
-              ₹{product.price ? product.price.toFixed(2) : '0.00'}
+              {settings.currency_symbol}{product.price ? product.price.toFixed(2) : '0.00'}
             </span>
           </div>
 

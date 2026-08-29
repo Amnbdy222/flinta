@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { MaintenancePage } from './components/MaintenancePage';
 import { HomePage } from './pages/HomePage';
 import { ShopPage } from './pages/ShopPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
@@ -28,6 +29,7 @@ import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import { WishlistProvider } from './context/WishlistContext';
 import { AuthModalProvider } from './context/AuthModalContext';
+import { StoreSettingsProvider, useStoreSettings } from './context/StoreSettingsContext';
 import { AuthModal } from './components/AuthModal';
 
 // Scroll to top automatically on route navigation
@@ -41,116 +43,131 @@ const ScrollToTop: React.FC = () => {
   return null;
 };
 
+const AppContent: React.FC = () => {
+  const { settings } = useStoreSettings();
+
+  // If maintenance mode is globally enabled, render MaintenancePage
+  if (settings.maintenance_mode) {
+    return <MaintenancePage />;
+  }
+
+  return (
+    <BrowserRouter>
+      <ScrollToTop />
+      <div className="flex flex-col min-h-screen bg-[#FAF9F6] text-[#0A0A0A] font-sans antialiased selection:bg-[#0A0A0A] selection:text-[#FAF9F6]">
+        {/* STICKY EDITORIAL HEADER */}
+        <Header />
+
+        {/* MAIN CONTENT AREA */}
+        <main className="flex-grow">
+          <Routes>
+            {/* Public Storefront Routes */}
+            <Route path="/" element={<HomePage />} />
+            <Route path="/shop" element={<ShopPage />} />
+            <Route path="/products/:slug" element={<ProductDetailPage />} />
+            <Route path="/product/:slug" element={<ProductDetailPage />} />
+            <Route path="/cart" element={<CartPage />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/shipping" element={<ShippingPage />} />
+            <Route path="/returns" element={<ReturnsPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+
+            {/* Auth Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+
+            {/* Protected Checkout & Order Confirmation Routes */}
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <CheckoutPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/order-success"
+              element={
+                <ProtectedRoute>
+                  <OrderSuccessPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Protected Account Portal Routes */}
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account/orders"
+              element={
+                <ProtectedRoute>
+                  <OrdersListPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account/orders/:id"
+              element={
+                <ProtectedRoute>
+                  <OrderDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account/returns"
+              element={
+                <ProtectedRoute>
+                  <AccountReturnsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/account/addresses"
+              element={
+                <ProtectedRoute>
+                  <AddressesPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 404 Fallback */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </main>
+
+        {/* EDITORIAL FOOTER */}
+        <Footer />
+
+        {/* GLOBAL AUTHENTICATION MODAL */}
+        <AuthModal />
+      </div>
+    </BrowserRouter>
+  );
+};
+
 export const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <WishlistProvider>
-        <CartProvider>
-          <AuthModalProvider>
-            <BrowserRouter>
-              <ScrollToTop />
-              <div className="flex flex-col min-h-screen bg-[#FAF9F6] text-[#0A0A0A] font-sans antialiased selection:bg-[#0A0A0A] selection:text-[#FAF9F6]">
-                {/* STICKY EDITORIAL HEADER */}
-                <Header />
-
-              {/* MAIN CONTENT AREA */}
-              <main className="flex-grow">
-                <Routes>
-                  {/* Public Storefront Routes */}
-                  <Route path="/" element={<HomePage />} />
-                  <Route path="/shop" element={<ShopPage />} />
-                  <Route path="/products/:slug" element={<ProductDetailPage />} />
-                  <Route path="/product/:slug" element={<ProductDetailPage />} />
-                  <Route path="/cart" element={<CartPage />} />
-                  <Route path="/wishlist" element={<WishlistPage />} />
-                  <Route path="/about" element={<AboutPage />} />
-                  <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/shipping" element={<ShippingPage />} />
-                  <Route path="/returns" element={<ReturnsPage />} />
-                  <Route path="/privacy" element={<PrivacyPage />} />
-                  <Route path="/terms" element={<TermsPage />} />
-
-                  {/* Auth Routes */}
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/signup" element={<SignupPage />} />
-
-                  {/* Protected Checkout & Order Confirmation Routes */}
-                  <Route
-                    path="/checkout"
-                    element={
-                      <ProtectedRoute>
-                        <CheckoutPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/order-success"
-                    element={
-                      <ProtectedRoute>
-                        <OrderSuccessPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Protected Account Portal Routes */}
-                  <Route
-                    path="/account"
-                    element={
-                      <ProtectedRoute>
-                        <AccountPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/account/orders"
-                    element={
-                      <ProtectedRoute>
-                        <OrdersListPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/account/orders/:id"
-                    element={
-                      <ProtectedRoute>
-                        <OrderDetailPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/account/returns"
-                    element={
-                      <ProtectedRoute>
-                        <AccountReturnsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/account/addresses"
-                    element={
-                      <ProtectedRoute>
-                        <AddressesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* 404 Fallback */}
-                  <Route path="*" element={<NotFoundPage />} />
-                </Routes>
-              </main>
-
-              {/* EDITORIAL FOOTER */}
-              <Footer />
-
-              {/* GLOBAL AUTHENTICATION MODAL */}
-              <AuthModal />
-            </div>
-          </BrowserRouter>
-        </AuthModalProvider>
-      </CartProvider>
-    </WishlistProvider>
-  </AuthProvider>
-);
+    <StoreSettingsProvider>
+      <AuthProvider>
+        <WishlistProvider>
+          <CartProvider>
+            <AuthModalProvider>
+              <AppContent />
+            </AuthModalProvider>
+          </CartProvider>
+        </WishlistProvider>
+      </AuthProvider>
+    </StoreSettingsProvider>
+  );
 };
 
 export default App;

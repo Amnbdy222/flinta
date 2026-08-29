@@ -13,8 +13,10 @@ import { ErrorState } from '../components/ErrorState';
 import { CancelOrderModal } from '../components/CancelOrderModal';
 import { ArrowRight, Package, RotateCcw, RefreshCw, Ban } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 
 export const OrdersListPage: React.FC = () => {
+  const { settings } = useStoreSettings();
   const [orders, setOrders] = useState<Order[]>([]);
   const [returnsMap, setReturnsMap] = useState<Record<string, CustomerReturnWithOrder>>({});
   const [exchangesMap, setExchangesMap] = useState<Record<string, CustomerExchangeWithOrder>>({});
@@ -166,7 +168,7 @@ export const OrdersListPage: React.FC = () => {
                         TOTAL
                       </span>
                       <span className="font-editorial text-lg font-light text-[#0A0A0A]">
-                        ₹{Number(order.total_amount).toFixed(2)}
+                        {settings.currency_symbol}{Number(order.total_amount).toFixed(2)}
                       </span>
                     </div>
                   </div>

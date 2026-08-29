@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Order } from '../types/database.types';
 import { formatOrderNumber } from '../services/orderService';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { ArrowRight, Package, Sparkles } from 'lucide-react';
 
 interface OrderSuccessModalProps {
@@ -12,6 +13,7 @@ interface OrderSuccessModalProps {
 
 export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({ order, isOpen }) => {
   const navigate = useNavigate();
+  const { settings } = useStoreSettings();
   const [timeLeft, setTimeLeft] = useState(4);
 
   const displayOrderNum = formatOrderNumber(order.order_number);
@@ -101,13 +103,13 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({ order, isO
           <div className="space-y-1.5 text-xs font-light text-[#383531]">
             <div className="flex justify-between">
               <span className="text-[0.65rem] tracking-wider uppercase text-[#736E65]">SUBTOTAL</span>
-              <span className="tracking-wider">₹{Number(order.subtotal).toFixed(2)}</span>
+              <span className="tracking-wider">{settings.currency_symbol}{Number(order.subtotal).toFixed(2)}</span>
             </div>
 
             {Number(order.discount_amount) > 0 && (
               <div className="flex justify-between text-emerald-800 font-medium">
                 <span className="text-[0.65rem] tracking-wider uppercase">PROMO DISCOUNT APPLIED</span>
-                <span className="tracking-wider">-₹{Number(order.discount_amount).toFixed(2)}</span>
+                <span className="tracking-wider">-{settings.currency_symbol}{Number(order.discount_amount).toFixed(2)}</span>
               </div>
             )}
 
@@ -118,7 +120,7 @@ export const OrderSuccessModal: React.FC<OrderSuccessModalProps> = ({ order, isO
 
             <div className="pt-2 hairline-t flex justify-between items-baseline text-[#0A0A0A] font-medium">
               <span className="text-[0.7rem] tracking-[0.2em] uppercase">TOTAL AMOUNT (COD)</span>
-              <span className="text-base font-normal tracking-wider">₹{Number(order.total_amount).toFixed(2)}</span>
+              <span className="text-base font-normal tracking-wider">{settings.currency_symbol}{Number(order.total_amount).toFixed(2)}</span>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, X, Loader2 } from 'lucide-react';
 import { fetchPaginatedProducts } from '../services/productService';
 import { FormattedProduct } from '../types/database.types';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface SearchModalProps {
 }
 
 export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => {
+  const { settings } = useStoreSettings();
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState<FormattedProduct[]>([]);
   const [loading, setLoading] = useState(false);
@@ -154,7 +156,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                         {product.name}
                       </h4>
                       <p className="text-xs font-light text-[#736E65]">
-                        ₹{product.price ? product.price.toFixed(2) : '0.00'}
+                        {settings.currency_symbol}{product.price ? product.price.toFixed(2) : '0.00'}
                       </p>
                     </div>
                   </Link>
