@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Coupon } from '../types/database.types';
 import { fetchActiveCoupons } from '../services/couponService';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { Tag, Sparkles } from 'lucide-react';
 
 export const PromoCouponsSection: React.FC = () => {
+  const { settings } = useStoreSettings();
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,10 +35,6 @@ export const PromoCouponsSection: React.FC = () => {
               ACTIVE PROMOTIONAL CODES
             </h2>
           </div>
-          {/* Description hidden on mobile */}
-          <p className="hidden md:block text-xs text-[#736E65] font-light max-w-sm leading-relaxed tracking-wide">
-            Use these exclusive client promotional codes at checkout for instant savings on your garment purchase.
-          </p>
         </div>
 
         {/* COUPON CARDS — horizontal scroll on mobile, grid on sm+ */}
@@ -45,7 +43,7 @@ export const PromoCouponsSection: React.FC = () => {
           <div className="flex sm:hidden gap-3 overflow-x-auto snap-x snap-mandatory pb-3 -mx-4 px-4 no-scrollbar">
             {coupons.map((c) => {
               const isPercent = c.discount_type === 'percentage';
-              const offerText = isPercent ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`;
+              const offerText = isPercent ? `${c.discount_value}% OFF` : `${settings.currency_symbol}${c.discount_value} OFF`;
               return (
                 <div
                   key={c.id || c.code}
@@ -59,7 +57,7 @@ export const PromoCouponsSection: React.FC = () => {
                     </span>
                     {c.maximum_discount && c.maximum_discount > 0 && (
                       <span className="text-[0.55rem] tracking-wider text-[#736E65] uppercase bg-[#FAF9F6] px-1.5 py-0.5 border border-[#0A0A0A]/10">
-                        MAX ₹{c.maximum_discount}
+                        MAX {settings.currency_symbol}{c.maximum_discount}
                       </span>
                     )}
                   </div>
@@ -71,7 +69,7 @@ export const PromoCouponsSection: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-[0.65rem] text-[#736E65] font-light leading-snug tracking-wide">
-                    {c.minimum_order_value > 0 ? `Min. order ₹${c.minimum_order_value.toLocaleString()}` : 'No minimum order required.'}
+                    {c.minimum_order_value > 0 ? `Min. order ${settings.currency_symbol}${c.minimum_order_value.toLocaleString()}` : 'No minimum order required.'}
                   </p>
                 </div>
               );
@@ -82,7 +80,7 @@ export const PromoCouponsSection: React.FC = () => {
           <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {coupons.map((c) => {
               const isPercent = c.discount_type === 'percentage';
-              const offerText = isPercent ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`;
+              const offerText = isPercent ? `${c.discount_value}% OFF` : `${settings.currency_symbol}${c.discount_value} OFF`;
               return (
                 <div
                   key={c.id || c.code}
@@ -96,7 +94,7 @@ export const PromoCouponsSection: React.FC = () => {
                     </span>
                     {c.maximum_discount && c.maximum_discount > 0 && (
                       <span className="text-[0.55rem] tracking-wider text-[#736E65] uppercase bg-[#FAF9F6] px-1.5 py-0.5 border border-[#0A0A0A]/10">
-                        MAX ₹{c.maximum_discount}
+                        MAX {settings.currency_symbol}{c.maximum_discount}
                       </span>
                     )}
                   </div>
@@ -109,7 +107,7 @@ export const PromoCouponsSection: React.FC = () => {
                   </div>
                   <p className="text-[0.7rem] text-[#736E65] font-light leading-snug tracking-wide pt-0.5">
                     {c.minimum_order_value > 0
-                      ? `Valid on orders of ₹${c.minimum_order_value.toLocaleString()} or more.`
+                      ? `Valid on orders of ${settings.currency_symbol}${c.minimum_order_value.toLocaleString()} or more.`
                       : 'No minimum order value required.'}
                   </p>
                 </div>

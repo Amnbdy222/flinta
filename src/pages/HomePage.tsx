@@ -6,7 +6,6 @@ import { ProductCard } from '../components/ProductCard';
 import { PromoBar } from '../components/PromoBar';
 import { ProductSkeleton } from '../components/LoadingSkeleton';
 import { PromoCouponsSection } from '../components/PromoCouponsSection';
-import { BrandStatement } from '../components/BrandStatement';
 import { SEO } from '../components/SEO';
 import { fetchActiveProducts } from '../services/productService';
 import { fetchStorefrontBanners } from '../services/bannerService';
@@ -156,9 +155,6 @@ export const HomePage: React.FC = () => {
 
       {/* 6. CAMPAIGN ANNOUNCEMENT BANNER */}
       <PromoBar />
-
-      {/* 7. BRAND STATEMENT */}
-      <BrandStatement />
     </div>
   );
 };

@@ -214,10 +214,6 @@ export const Footer: React.FC = () => {
                 <span>INSTAGRAM</span>
               </a>
             )}
-            <span>•</span>
-            <span>PARIS</span>
-            <span>TOKYO</span>
-            <span>NEW YORK</span>
           </div>
         </div>
       </div>
