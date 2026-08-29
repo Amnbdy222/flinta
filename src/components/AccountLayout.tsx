@@ -47,23 +47,23 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] pt-4 sm:pt-6 md:pt-8 pb-16 md:pb-24 text-[#0A0A0A]">
+    <div className="min-h-screen bg-[#FAF9F6] pt-2 sm:pt-6 md:pt-8 pb-12 sm:pb-16 md:pb-24 text-[#0A0A0A]">
       <SEO title={title} description={description} />
 
-      <div className="container-editorial max-w-6xl mx-auto">
-        {/* TOP HEADER — account title */}
-        <div className="py-3 sm:py-4 hairline-b mb-0">
-          <span className="text-[0.65rem] font-medium tracking-[0.3em] uppercase text-[#736E65]">
+      <div className="container-editorial max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
+        {/* TOP HEADER — account title (compact on mobile, editorial on desktop) */}
+        <div className="py-2.5 sm:py-4 hairline-b mb-0">
+          <span className="text-[0.6rem] sm:text-[0.65rem] font-medium tracking-[0.25em] uppercase text-[#736E65]">
             CLIENT PORTAL
           </span>
-          <h1 className="font-editorial text-xl sm:text-2xl md:text-3xl font-light uppercase tracking-tight text-[#0A0A0A] leading-tight">
+          <h1 className="font-editorial text-lg sm:text-2xl md:text-3xl font-light uppercase tracking-tight text-[#0A0A0A] leading-tight">
             MY ACCOUNT
           </h1>
         </div>
 
         {/* MOBILE HORIZONTAL SCROLLABLE NAV */}
         <nav
-          className="lg:hidden flex overflow-x-auto no-scrollbar hairline-b bg-white"
+          className="lg:hidden flex overflow-x-auto no-scrollbar hairline-b bg-white -mx-3 px-3 sm:mx-0 sm:px-0"
           aria-label="Account navigation"
         >
           {navMenuItems.map((item) => {
@@ -72,7 +72,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
               <Link
                 key={item.key}
                 to={item.path}
-                className={`flex-shrink-0 px-4 py-3 text-[0.65rem] tracking-[0.2em] font-medium uppercase whitespace-nowrap border-b-2 transition-colors ${
+                className={`flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 text-[0.6rem] sm:text-[0.65rem] tracking-[0.18em] font-medium uppercase whitespace-nowrap border-b-2 transition-colors ${
                   isActive
                     ? 'border-[#0A0A0A] text-[#0A0A0A]'
                     : 'border-transparent text-[#736E65] hover:text-[#0A0A0A]'
@@ -85,7 +85,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
         </nav>
 
         {/* DESKTOP 2-COLUMN LAYOUT */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-8 items-start pt-5 sm:pt-6 lg:pt-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-8 items-start pt-3 sm:pt-6 lg:pt-8">
           {/* DESKTOP STICKY LEFT SIDEBAR */}
           <aside className="hidden lg:block lg:col-span-1 lg:sticky lg:top-24 bg-white hairline-all shadow-xs">
             <nav className="flex flex-col p-2" aria-label="Account sidebar navigation">
