@@ -46,10 +46,12 @@ DECLARE
   v_item             RECORD;
   v_variant          RECORD;
   v_product          RECORD;
-  v_subtotal         NUMERIC(10,2) := 0;
-  v_shipping_amount  NUMERIC(10,2) := 0;
-  v_discount         NUMERIC(10,2) := 0;
-  v_total            NUMERIC(10,2);
+  v_subtotal            NUMERIC(10,2) := 0;
+  v_shipping_amount     NUMERIC(10,2) := 0;
+  v_free_thresh         NUMERIC(10,2);
+  v_flat_shipping       NUMERIC(10,2);
+  v_discount            NUMERIC(10,2) := 0;
+  v_total               NUMERIC(10,2);
   v_order_id         UUID;
   v_order_number     TEXT;
   v_coupon           RECORD;
@@ -246,8 +248,23 @@ BEGIN
   END IF;
 
   -- ============================================================
-  -- 5. CALCULATE FINAL TOTAL
+  -- 5. CALCULATE DYNAMIC SHIPPING AMOUNT FROM STORE SETTINGS & FINAL TOTAL
   -- ============================================================
+  SELECT free_shipping_threshold, flat_shipping_rate
+    INTO v_free_thresh, v_flat_shipping
+    FROM store_settings
+    WHERE id = 1;
+
+  IF v_free_thresh IS NOT NULL AND v_subtotal >= v_free_thresh THEN
+    v_shipping_amount := 0;
+  ELSIF v_flat_shipping IS NOT NULL THEN
+    v_shipping_amount := v_flat_shipping;
+  ELSIF v_subtotal >= 999 THEN
+    v_shipping_amount := 0;
+  ELSE
+    v_shipping_amount := 50;
+  END IF;
+
   v_total := GREATEST(0, v_subtotal - v_discount + v_shipping_amount);
 
   -- ============================================================
