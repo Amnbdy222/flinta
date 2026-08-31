@@ -98,8 +98,37 @@ export const handler: Handler = async (event) => {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Cannot create payment for a cancelled order.' }) };
     }
 
-    // ── 5. Calculate server-authoritative amount ──
-    const totalAmount = Number(order.total_amount) || 0;
+    // ── 5. Calculate server-authoritative amount from store_settings ──
+    const { data: settingsData } = await dbClient
+      .from('store_settings')
+      .select('free_shipping_threshold, flat_shipping_rate')
+      .eq('id', 1)
+      .single();
+
+    const freeShippingThreshold = Number(settingsData?.free_shipping_threshold ?? 999);
+    const flatShippingRate = Number(settingsData?.flat_shipping_rate ?? 50);
+
+    const subtotal = Number(order.subtotal) || 0;
+    const discount = Number(order.discount_amount) || 0;
+    const expectedShipping = subtotal >= freeShippingThreshold ? 0 : flatShippingRate;
+    const expectedTotal = Math.max(0, subtotal - discount + expectedShipping);
+
+    if (Number(order.total_amount) !== expectedTotal || Number(order.shipping_amount) !== expectedShipping) {
+      console.log(`[create-razorpay-order] Correcting DB order ${orderId} totals: expected total ${expectedTotal}, shipping ${expectedShipping}`);
+      await dbClient
+        .from('orders')
+        .update({
+          shipping_amount: expectedShipping,
+          total_amount: expectedTotal,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', orderId);
+
+      order.shipping_amount = expectedShipping;
+      order.total_amount = expectedTotal;
+    }
+
+    const totalAmount = expectedTotal;
     const amountInPaise = Math.round(totalAmount * 100);
 
     if (amountInPaise < 100) {

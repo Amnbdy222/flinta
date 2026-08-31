@@ -140,6 +140,34 @@ export async function placeOrderCOD(
     updated_at: String(orderData.updated_at || new Date().toISOString()),
   };
 
+  // Verify shipping fee against DB store_settings in case RPC executed legacy hardcoded logic
+  try {
+    const { data: stData } = await supabase
+      .from('store_settings')
+      .select('free_shipping_threshold, flat_shipping_rate')
+      .eq('id', 1)
+      .single();
+
+    if (stData) {
+      const freeThresh = Number(stData.free_shipping_threshold ?? 999);
+      const flatRate = Number(stData.flat_shipping_rate ?? 50);
+      const expectedShip = createdOrder.subtotal >= freeThresh ? 0 : flatRate;
+      const expectedTot = Math.max(0, createdOrder.subtotal - createdOrder.discount_amount + expectedShip);
+
+      if (createdOrder.shipping_amount !== expectedShip || createdOrder.total_amount !== expectedTot) {
+        await supabase
+          .from('orders')
+          .update({ shipping_amount: expectedShip, total_amount: expectedTot })
+          .eq('id', createdOrder.id);
+
+        createdOrder.shipping_amount = expectedShip;
+        createdOrder.total_amount = expectedTot;
+      }
+    }
+  } catch (stErr) {
+    console.warn('Store settings shipping validation warning:', stErr);
+  }
+
   clearLocalGuestCartItems();
 
   // Send order confirmation email only if sendEmail is true (Default: true for COD, false for Razorpay until payment verified)
