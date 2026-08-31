@@ -152,7 +152,7 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ success: true, emailId: data?.id }),
+      body: JSON.stringify({ success: true, emailId: resendResult.data?.id }),
     };
   } catch (err) {
     console.error('send-order-email error:', err);
