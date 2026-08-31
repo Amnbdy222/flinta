@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStoreSettings } from '../context/StoreSettingsContext';
 import { placeOrderCOD, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
 import { openRazorpayCheckoutFlow } from '../services/razorpayService';
+import { cancelOrder, fetchOrderDetail } from '../services/orderService';
 import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck } from 'lucide-react';
@@ -36,6 +37,7 @@ export const CheckoutPage: React.FC = () => {
 
   // Double-order submission ref lock
   const isPlacingOrderRef = useRef(false);
+  const pendingRazorpayOrderRef = useRef<Order | null>(null);
 
   // Sync user profile data if loaded
   useEffect(() => {
@@ -46,10 +48,10 @@ export const CheckoutPage: React.FC = () => {
 
   // Handle empty or converted cart redirect
   useEffect(() => {
-    if (!completedOrder && !cartLoading && (items.length === 0 || cart?.status === 'converted')) {
+    if (!completedOrder && !pendingRazorpayOrderRef.current && !isSubmitting && !cartLoading && (items.length === 0 || cart?.status === 'converted')) {
       navigate('/cart', { replace: true });
     }
-  }, [items, cart, cartLoading, completedOrder, navigate]);
+  }, [items, cart, cartLoading, completedOrder, isSubmitting, navigate]);
 
   // Calculate dynamic shipping & COD fee based on DB store settings
   const isFreeShipping = subtotal >= settings.free_shipping_threshold;
@@ -98,7 +100,7 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
-    if (!cart || cart.status === 'converted') {
+    if (!cart || (cart.status === 'converted' && !pendingRazorpayOrderRef.current)) {
       setOrderError('Your cart has already been processed. Redirecting to your orders...');
       setTimeout(() => navigate('/account/orders', { replace: true }), 1500);
       return;
@@ -119,10 +121,21 @@ export const CheckoutPage: React.FC = () => {
     };
 
     try {
-      const createdOrder = await placeOrderCOD(cart.id, shippingData, appliedCoupon?.code);
+      // For COD: send email immediately. For Razorpay: do NOT send email until payment signature is verified.
+      const isRazorpay = paymentMethod === 'razorpay';
+      let createdOrder: Order;
+
+      if (isRazorpay && pendingRazorpayOrderRef.current) {
+        createdOrder = pendingRazorpayOrderRef.current;
+      } else {
+        createdOrder = await placeOrderCOD(cart.id, shippingData, appliedCoupon?.code, { sendEmail: !isRazorpay });
+        if (isRazorpay) {
+          pendingRazorpayOrderRef.current = createdOrder;
+        }
+      }
 
       // Handle Razorpay Payment flow
-      if (paymentMethod === 'razorpay') {
+      if (isRazorpay) {
         try {
           await openRazorpayCheckoutFlow(
             createdOrder.id,
@@ -134,7 +147,8 @@ export const CheckoutPage: React.FC = () => {
               contact: shippingData.phone,
             },
             (paymentId) => {
-              // Server has verified HMAC-SHA256 signature and updated database order to PAID & PROCESSING!
+              // PAYMENT SUCCESS: Server has verified HMAC-SHA256 signature, updated database order to PAID & PROCESSING, and sent confirmation email!
+              pendingRazorpayOrderRef.current = null;
               createdOrder.payment_method = 'razorpay';
               createdOrder.payment_status = 'paid';
               createdOrder.status = 'processing';
@@ -143,17 +157,60 @@ export const CheckoutPage: React.FC = () => {
               void refreshCart();
               setCompletedOrder(createdOrder);
             },
-            () => {
-              // Razorpay modal dismissed / cancelled
+            async () => {
+              // CHECKOUT DISMISSED: Check if payment was already verified by server/webhook
+              try {
+                const latestOrder = await fetchOrderDetail(createdOrder.id);
+                if (latestOrder && (latestOrder.payment_status === 'paid' || latestOrder.status === 'processing')) {
+                  pendingRazorpayOrderRef.current = null;
+                  clearCartLocal();
+                  void refreshCart();
+                  setCompletedOrder(latestOrder);
+                  return;
+                }
+              } catch (dErr) {
+                console.warn('Order state check error on dismiss:', dErr);
+              }
               setIsSubmitting(false);
               isPlacingOrderRef.current = false;
-              setOrderError('Razorpay test payment was cancelled. Your order remains saved in your account.');
+              setOrderError('Payment checkout was closed. If you completed a payment, it will be verified automatically.');
             },
-            (errorMsg) => {
-              // Server verification or payment error
+            async (errorMsg) => {
+              // PAYMENT FAILED: Check if payment was actually verified/paid on server
+              try {
+                const latestOrder = await fetchOrderDetail(createdOrder.id);
+                if (latestOrder && (latestOrder.payment_status === 'paid' || latestOrder.status === 'processing')) {
+                  pendingRazorpayOrderRef.current = null;
+                  clearCartLocal();
+                  void refreshCart();
+                  setCompletedOrder(latestOrder);
+                  return;
+                }
+
+                // If verification failed due to network glitch (Failed to fetch), do NOT cancel the order!
+                // The customer completed payment on Razorpay, so the Razorpay Webhook will verify it server-to-server.
+                if (
+                  errorMsg?.includes('Failed to fetch') ||
+                  errorMsg?.includes('NetworkError') ||
+                  errorMsg?.includes('Failed to create Razorpay backend order')
+                ) {
+                  setIsSubmitting(false);
+                  isPlacingOrderRef.current = false;
+                  setOrderError('Payment was completed, but network verification timed out. Your order will be verified automatically via background webhook.');
+                  return;
+                }
+
+                // Only cancel if payment was explicitly rejected by payment gateway (e.g. card declined)
+                if (latestOrder && latestOrder.payment_status === 'pending') {
+                  await cancelOrder(createdOrder.id, 'Razorpay payment failed');
+                }
+              } catch (cErr) {
+                console.warn('Order cancellation cleanup warning:', cErr);
+              }
+              pendingRazorpayOrderRef.current = null;
               setIsSubmitting(false);
               isPlacingOrderRef.current = false;
-              setOrderError(errorMsg);
+              setOrderError(errorMsg || 'Payment failed. Please try again.');
             }
           );
         } catch (rzpErr: unknown) {

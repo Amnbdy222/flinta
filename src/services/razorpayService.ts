@@ -45,6 +45,20 @@ export function loadRazorpayScript(): Promise<boolean> {
   });
 }
 
+function getFunctionEndpoint(functionName: string): string {
+  if (import.meta.env.VITE_FUNCTIONS_URL) {
+    return `${import.meta.env.VITE_FUNCTIONS_URL}/${functionName}`;
+  }
+  // When testing on local Vite dev server (localhost:5173 / localhost:3000), fallback to production Netlify endpoint
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ) {
+    return `https://flintaindia.com/.netlify/functions/${functionName}`;
+  }
+  return `/.netlify/functions/${functionName}`;
+}
+
 /**
  * Step 1: Create Razorpay Order via Netlify Backend Function
  */
@@ -52,7 +66,8 @@ export async function createRazorpayOrderBackend(
   orderId: string,
   accessToken: string
 ): Promise<{ order_id: string; razorpay_order_id: string; amount: number; currency: string }> {
-  const res = await fetch('/.netlify/functions/create-razorpay-order', {
+  const endpoint = getFunctionEndpoint('create-razorpay-order');
+  const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ orderId, accessToken }),
@@ -76,27 +91,36 @@ export async function verifyRazorpayPaymentBackend(
   razorpaySignature: string,
   accessToken: string
 ): Promise<RazorpayVerificationResult> {
-  const res = await fetch('/.netlify/functions/verify-razorpay-payment', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      orderId,
-      razorpay_payment_id: razorpayPaymentId,
-      razorpay_order_id: razorpayOrderId,
-      razorpay_signature: razorpaySignature,
-      accessToken,
-    }),
-  });
+  const endpoint = getFunctionEndpoint('verify-razorpay-payment');
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        orderId,
+        razorpay_payment_id: razorpayPaymentId,
+        razorpay_order_id: razorpayOrderId,
+        razorpay_signature: razorpaySignature,
+        accessToken,
+      }),
+    });
 
-  const data = await res.json();
-  if (!res.ok || !data.success) {
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.success) {
+      return {
+        success: false,
+        error: data.error || `Razorpay payment signature verification failed (Status ${res.status}).`,
+      };
+    }
+
+    return { success: true, message: data.message };
+  } catch (err: any) {
+    console.warn('[verifyRazorpayPaymentBackend] Fetch error:', err?.message);
     return {
       success: false,
-      error: data.error || 'Razorpay payment signature verification failed.',
+      error: `Failed to fetch verification endpoint: ${err?.message || 'Network error'}`,
     };
   }
-
-  return { success: true, message: data.message };
 }
 
 /**
@@ -148,6 +172,8 @@ export async function openRazorpayCheckoutFlow(
     throw new Error(errorMsg);
   }
 
+  let isPaymentSuccessful = false;
+
   // 3. Open Razorpay Standard Checkout Modal
   const rzpOptions = {
     key: razorpayKey,
@@ -189,6 +215,7 @@ export async function openRazorpayCheckoutFlow(
           return;
         }
 
+        isPaymentSuccessful = true;
         onSuccess(paymentId);
       } catch (vErr: any) {
         if (onError) onError(vErr?.message || 'Payment verification server error.');
@@ -196,9 +223,11 @@ export async function openRazorpayCheckoutFlow(
     },
     modal: {
       ondismiss: function () {
+        if (isPaymentSuccessful) return;
         if (onCancel) onCancel();
       },
       onfailed: function (errorResponse: any) {
+        if (isPaymentSuccessful) return;
         console.error('Razorpay payment failed:', errorResponse);
         if (onError) onError(errorResponse?.error?.description || 'Razorpay payment failed.');
       },

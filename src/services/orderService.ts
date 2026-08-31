@@ -142,7 +142,12 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<Ord
     throw new Error('Unauthorized to cancel this order.');
   }
 
-  const allowedStatus = ['pending', 'confirmed', 'processing'];
+  // Security guard: Never allow cancelling paid orders
+  if (existingOrder.payment_status === 'paid') {
+    throw new Error('Cannot cancel an order that has already been paid.');
+  }
+
+  const allowedStatus = ['pending', 'confirmed'];
   if (!allowedStatus.includes(existingOrder.status)) {
     throw new Error(`Orders in "${existingOrder.status.toUpperCase()}" status cannot be cancelled.`);
   }

@@ -44,7 +44,8 @@ function isValidUUID(str: string): boolean {
 export async function placeOrderCOD(
   cartId: string,
   shippingDetails: ShippingDetails,
-  couponCode?: string | null
+  couponCode?: string | null,
+  options?: { sendEmail?: boolean }
 ): Promise<Order> {
   // 1. Get active authenticated user session
   const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
@@ -82,20 +83,6 @@ export async function placeOrderCOD(
     throw new Error('Unable to resolve active cart session. Please try adding items to your bag again.');
   }
 
-  // 3. Call place_cod_order RPC
-  //    The server-side function handles EVERYTHING atomically:
-  //    - Cart validation & locking
-  //    - Item validation & stock locking (FOR UPDATE)
-  //    - Server-authoritative subtotal calculation
-  //    - Coupon validation (active, dates, min order, usage limits, per-user limits)
-  //    - Server-authoritative discount calculation
-  //    - Order creation with correct subtotal, discount_amount, total_amount, coupon_id
-  //    - Order items insertion with product snapshots
-  //    - Inventory decrement
-  //    - Coupon usage recording
-  //    - Cart conversion
-  //    If ANY step fails, the entire transaction rolls back.
-
   const cleanCode = couponCode?.trim().toUpperCase() || null;
 
   const { data: rpcData, error: rpcErr } = await supabase.rpc('place_cod_order', {
@@ -115,7 +102,6 @@ export async function placeOrderCOD(
     console.error('place_cod_order RPC error:', rpcErr);
     const msg = rpcErr.message || 'Failed to create order.';
 
-    // Handle known error cases
     if (
       msg.includes('already been converted') ||
       msg.includes('already been processed')
@@ -129,8 +115,6 @@ export async function placeOrderCOD(
     throw new Error('Order creation returned no data. Please try again.');
   }
 
-  // 4. Parse the server response into our Order type
-  //    The RPC returns JSONB with all order fields.
   const orderData = rpcData as Record<string, unknown>;
 
   const createdOrder: Order = {
@@ -158,8 +142,11 @@ export async function placeOrderCOD(
 
   clearLocalGuestCartItems();
 
-  // Fire-and-forget: send order confirmation email via Netlify Function (fetches DB order)
-  void sendOrderConfirmationEmail(createdOrder.id);
+  // Send order confirmation email only if sendEmail is true (Default: true for COD, false for Razorpay until payment verified)
+  const shouldSendEmail = options?.sendEmail !== false;
+  if (shouldSendEmail) {
+    void sendOrderConfirmationEmail(createdOrder.id);
+  }
 
   return createdOrder;
 }
