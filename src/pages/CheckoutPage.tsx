@@ -6,6 +6,7 @@ import { useStoreSettings } from '../context/StoreSettingsContext';
 import { placeOrderCOD, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
 import { openRazorpayCheckoutFlow } from '../services/razorpayService';
 import { cancelOrder, fetchOrderDetail } from '../services/orderService';
+import { sendOrderConfirmationEmail } from '../services/emailService';
 import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck } from 'lucide-react';
@@ -147,12 +148,13 @@ export const CheckoutPage: React.FC = () => {
               contact: shippingData.phone,
             },
             (paymentId) => {
-              // PAYMENT SUCCESS: Server has verified HMAC-SHA256 signature, updated database order to PAID & PROCESSING, and sent confirmation email!
+              // PAYMENT SUCCESS: Server has verified HMAC-SHA256 signature, updated database order to PAID & PROCESSING!
               pendingRazorpayOrderRef.current = null;
               createdOrder.payment_method = 'razorpay';
               createdOrder.payment_status = 'paid';
               createdOrder.status = 'processing';
               createdOrder.razorpay_payment_id = paymentId;
+              void sendOrderConfirmationEmail(createdOrder.id);
               clearCartLocal();
               void refreshCart();
               setCompletedOrder(createdOrder);

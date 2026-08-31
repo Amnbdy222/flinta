@@ -202,7 +202,8 @@ export const handler: Handler = async (event) => {
       dbClient,
       orderId,
       razorpay_payment_id,
-      razorpay_order_id
+      razorpay_order_id,
+      user.email
     );
 
     if (!result.success) {

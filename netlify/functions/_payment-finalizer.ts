@@ -77,7 +77,8 @@ export async function finalizeRazorpayPaymentServer(
   dbClient: SupabaseClient,
   orderId: string,
   razorpayPaymentId: string,
-  razorpayOrderId: string
+  razorpayOrderId: string,
+  userEmail?: string
 ): Promise<FinalizationResult> {
   // Call the atomic database function
   const { data, error } = await dbClient.rpc('finalize_razorpay_payment', {
@@ -141,7 +142,7 @@ export async function finalizeRazorpayPaymentServer(
         .eq('id', orderId);
 
       try {
-        await triggerConfirmationEmail(dbClient, orderId);
+        await triggerConfirmationEmail(dbClient, orderId, userEmail);
         emailSent = true;
       } catch (eErr) {
         console.warn('[PaymentFinalizer] Email fallback trigger warning:', eErr);
@@ -162,7 +163,7 @@ export async function finalizeRazorpayPaymentServer(
   let emailSent = false;
   if (result.email_event_created) {
     try {
-      await triggerConfirmationEmail(dbClient, orderId);
+      await triggerConfirmationEmail(dbClient, orderId, userEmail);
       emailSent = true;
     } catch (emailErr) {
       // Non-blocking: log but don't fail the payment
@@ -181,7 +182,8 @@ export async function finalizeRazorpayPaymentServer(
  */
 async function triggerConfirmationEmail(
   dbClient: SupabaseClient,
-  orderId: string
+  orderId: string,
+  overrideEmail?: string
 ): Promise<void> {
   // Fetch order with items
   const { data: order, error: orderErr } = await dbClient
@@ -195,11 +197,20 @@ async function triggerConfirmationEmail(
     return;
   }
 
-  // Fetch user email from auth
-  const { data: { user }, error: userErr } = await dbClient.auth.admin.getUserById(order.user_id);
+  // Resolve target email address
+  let targetEmail = overrideEmail;
 
-  if (userErr || !user?.email) {
-    console.warn('[PaymentFinalizer] Could not fetch user email:', userErr?.message);
+  if (!targetEmail && order.user_id) {
+    try {
+      const { data: { user } } = await dbClient.auth.admin.getUserById(order.user_id);
+      targetEmail = user?.email;
+    } catch (uErr: any) {
+      console.warn('[PaymentFinalizer] auth.admin.getUserById warning:', uErr?.message);
+    }
+  }
+
+  if (!targetEmail) {
+    console.warn('[PaymentFinalizer] Could not resolve recipient email address, skipping email.');
     return;
   }
 
@@ -227,8 +238,8 @@ async function triggerConfirmationEmail(
 
   const emailData = {
     orderNumber: String(order.order_number || ''),
-    customerName: String(order.shipping_name || user.user_metadata?.full_name || 'Valued Client'),
-    customerEmail: user.email,
+    customerName: String(order.shipping_name || 'Valued Client'),
+    customerEmail: targetEmail,
     items,
     subtotal: Number(order.subtotal) || 0,
     discountAmount: Number(order.discount_amount) || 0,
@@ -252,7 +263,7 @@ async function triggerConfirmationEmail(
   const resend = new Resend(RESEND_API_KEY);
   const { error } = await resend.emails.send({
     from: `FLINT A <${SENDER_EMAIL}>`,
-    to: [user.email],
+    to: [targetEmail],
     subject,
     html,
   });
