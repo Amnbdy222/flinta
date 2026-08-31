@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useStoreSettings } from '../context/StoreSettingsContext';
 import { placeOrderCOD, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
 import { openRazorpayCheckoutFlow } from '../services/razorpayService';
-import { cancelOrder, fetchOrderDetail } from '../services/orderService';
+import { fetchOrderDetail } from '../services/orderService';
 import { sendOrderConfirmationEmail } from '../services/emailService';
 import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
@@ -178,7 +178,7 @@ export const CheckoutPage: React.FC = () => {
               setOrderError('Payment checkout was closed. If you completed a payment, it will be verified automatically.');
             },
             async (errorMsg) => {
-              // PAYMENT FAILED: Check if payment was actually verified/paid on server
+              // PAYMENT ERROR / DISMISS: Check if payment was actually verified/paid on server
               try {
                 const latestOrder = await fetchOrderDetail(createdOrder.id);
                 if (latestOrder && (latestOrder.payment_status === 'paid' || latestOrder.status === 'processing')) {
@@ -188,31 +188,12 @@ export const CheckoutPage: React.FC = () => {
                   setCompletedOrder(latestOrder);
                   return;
                 }
-
-                // If verification failed due to network glitch (Failed to fetch), do NOT cancel the order!
-                // The customer completed payment on Razorpay, so the Razorpay Webhook will verify it server-to-server.
-                if (
-                  errorMsg?.includes('Failed to fetch') ||
-                  errorMsg?.includes('NetworkError') ||
-                  errorMsg?.includes('Failed to create Razorpay backend order')
-                ) {
-                  setIsSubmitting(false);
-                  isPlacingOrderRef.current = false;
-                  setOrderError('Payment was completed, but network verification timed out. Your order will be verified automatically via background webhook.');
-                  return;
-                }
-
-                // Only cancel if payment was explicitly rejected by payment gateway (e.g. card declined)
-                if (latestOrder && latestOrder.payment_status === 'pending') {
-                  await cancelOrder(createdOrder.id, 'Razorpay payment failed');
-                }
               } catch (cErr) {
-                console.warn('Order cancellation cleanup warning:', cErr);
+                console.warn('Order state check warning:', cErr);
               }
-              pendingRazorpayOrderRef.current = null;
               setIsSubmitting(false);
               isPlacingOrderRef.current = false;
-              setOrderError(errorMsg || 'Payment failed. Please try again.');
+              setOrderError(errorMsg || 'Payment not completed. Your order is pending payment.');
             }
           );
         } catch (rzpErr: unknown) {
