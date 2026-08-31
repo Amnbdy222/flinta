@@ -35,7 +35,7 @@ async function getAccessToken(): Promise<string | null> {
  * Trigger order confirmation email after successful order placement in DB.
  * Fire-and-forget — does not throw on failure.
  */
-export async function sendOrderConfirmationEmail(orderId: string): Promise<void> {
+export async function sendOrderConfirmationEmail(orderId: string, recipientEmail?: string): Promise<void> {
   try {
     if (!orderId) return;
 
@@ -46,7 +46,7 @@ export async function sendOrderConfirmationEmail(orderId: string): Promise<void>
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId, accessToken }),
+      body: JSON.stringify({ orderId, accessToken, recipientEmail }),
     });
 
     if (!res.ok) {

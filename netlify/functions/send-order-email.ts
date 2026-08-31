@@ -41,7 +41,7 @@ export const handler: Handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { orderId, accessToken } = body as { orderId: string; accessToken: string };
+    const { orderId, accessToken, recipientEmail } = body as { orderId: string; accessToken: string; recipientEmail?: string };
 
     if (!orderId) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing orderId' }) };
@@ -55,9 +55,14 @@ export const handler: Handler = async (event) => {
     const authClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { data: { user }, error: authErr } = await authClient.auth.getUser(accessToken);
 
-    if (authErr || !user || !user.email) {
+    if (authErr || !user) {
       console.error('Auth verification failed:', authErr);
       return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized user token' }) };
+    }
+
+    const targetEmail = recipientEmail || user.email;
+    if (!targetEmail) {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Recipient email address missing' }) };
     }
 
     // 2. Fetch authoritative order data from Supabase DB using orderId
@@ -99,7 +104,7 @@ export const handler: Handler = async (event) => {
     const orderEmailData: OrderEmailData = {
       orderNumber: String(order.order_number || ''),
       customerName: String(order.shipping_name || user.user_metadata?.full_name || 'Valued Client'),
-      customerEmail: user.email,
+      customerEmail: targetEmail,
       items,
       subtotal: Number(order.subtotal) || 0,
       discountAmount: Number(order.discount_amount) || 0,
@@ -122,16 +127,26 @@ export const handler: Handler = async (event) => {
     const { subject, html } = buildOrderConfirmationEmail(orderEmailData);
 
     const resend = new Resend(RESEND_API_KEY);
-    const { data, error } = await resend.emails.send({
+    let resendResult = await resend.emails.send({
       from: `FLINT A <${SENDER_EMAIL}>`,
-      to: [user.email],
+      to: [targetEmail],
       subject,
       html,
     });
 
-    if (error) {
-      console.error('Resend send error:', error);
-      return { statusCode: 500, headers, body: JSON.stringify({ error: 'Failed to send email via Resend' }) };
+    if (resendResult.error) {
+      console.warn('Primary sender email error, trying fallback onboarding@resend.dev:', resendResult.error);
+      resendResult = await resend.emails.send({
+        from: 'FLINT A <onboarding@resend.dev>',
+        to: [targetEmail],
+        subject,
+        html,
+      });
+    }
+
+    if (resendResult.error) {
+      console.error('Resend send error:', resendResult.error);
+      return { statusCode: 500, headers, body: JSON.stringify({ error: resendResult.error.message || 'Failed to send email via Resend' }) };
     }
 
     return {

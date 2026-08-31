@@ -261,16 +261,26 @@ async function triggerConfirmationEmail(
   const { subject, html } = buildOrderConfirmationEmail(emailData);
 
   const resend = new Resend(RESEND_API_KEY);
-  const { error } = await resend.emails.send({
+  let resendResult = await resend.emails.send({
     from: `FLINT A <${SENDER_EMAIL}>`,
     to: [targetEmail],
     subject,
     html,
   });
 
-  if (error) {
-    console.warn('[PaymentFinalizer] Resend email error:', error);
+  if (resendResult.error) {
+    console.warn('[PaymentFinalizer] Primary sender email error, trying fallback onboarding@resend.dev:', resendResult.error);
+    resendResult = await resend.emails.send({
+      from: 'FLINT A <onboarding@resend.dev>',
+      to: [targetEmail],
+      subject,
+      html,
+    });
+  }
+
+  if (resendResult.error) {
+    console.warn('[PaymentFinalizer] Resend email error:', resendResult.error);
   } else {
-    console.log(`[PaymentFinalizer] Confirmation email sent for order ${orderId}`);
+    console.log(`[PaymentFinalizer] Confirmation email sent for order ${orderId} to ${targetEmail}`);
   }
 }

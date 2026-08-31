@@ -154,7 +154,7 @@ export const CheckoutPage: React.FC = () => {
               createdOrder.payment_status = 'paid';
               createdOrder.status = 'processing';
               createdOrder.razorpay_payment_id = paymentId;
-              void sendOrderConfirmationEmail(createdOrder.id);
+              void sendOrderConfirmationEmail(createdOrder.id, shippingData.email);
               clearCartLocal();
               void refreshCart();
               setCompletedOrder(createdOrder);

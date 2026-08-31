@@ -145,7 +145,7 @@ export async function placeOrderCOD(
   // Send order confirmation email only if sendEmail is true (Default: true for COD, false for Razorpay until payment verified)
   const shouldSendEmail = options?.sendEmail !== false;
   if (shouldSendEmail) {
-    void sendOrderConfirmationEmail(createdOrder.id);
+    void sendOrderConfirmationEmail(createdOrder.id, shippingDetails.email);
   }
 
   return createdOrder;
