@@ -652,3 +652,79 @@ REVOKE EXECUTE ON FUNCTION public.create_razorpay_pending_order(
 GRANT EXECUTE ON FUNCTION public.create_razorpay_pending_order(
   UUID, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, TEXT
 ) TO authenticated;
+
+
+-- ============================================================
+-- 12. REFUND SCHEMA EXTENSIONS & ATOMIC REFUND FINALIZATION RPC
+-- ============================================================
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS razorpay_refund_id TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS refund_status TEXT;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS stock_restored BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cancellation_email_sent BOOLEAN DEFAULT FALSE;
+
+CREATE OR REPLACE FUNCTION public.finalize_razorpay_refund(
+  p_order_id          UUID,
+  p_razorpay_refund_id TEXT,
+  p_reason            TEXT DEFAULT 'Customer requested cancellation & refund'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_order         RECORD;
+  v_item          RECORD;
+BEGIN
+  -- 1. Lock the order row
+  SELECT id, status, payment_status, payment_method, stock_deducted, stock_restored
+    INTO v_order
+    FROM public.orders
+    WHERE id = p_order_id
+    FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Order % not found', p_order_id;
+  END IF;
+
+  -- 2. Idempotency: check if already refunded
+  IF v_order.status = 'cancelled' AND v_order.payment_status = 'refunded' THEN
+    RETURN jsonb_build_object('already_refunded', TRUE, 'success', TRUE);
+  END IF;
+
+  -- 3. Update Order state atomically to cancelled & refunded
+  UPDATE public.orders
+    SET status = 'cancelled',
+        payment_status = 'refunded',
+        razorpay_refund_id = p_razorpay_refund_id,
+        refund_status = 'processed',
+        updated_at = NOW()
+    WHERE id = p_order_id;
+
+  -- 4. Restore variant stock atomically (idempotent: checks stock_restored flag)
+  IF v_order.stock_deducted = TRUE AND COALESCE(v_order.stock_restored, FALSE) = FALSE THEN
+    FOR v_item IN
+      SELECT variant_id, quantity
+        FROM public.order_items
+        WHERE order_id = p_order_id
+    LOOP
+      IF v_item.variant_id IS NOT NULL AND v_item.quantity > 0 THEN
+        UPDATE public.product_variants
+          SET stock = stock + v_item.quantity,
+              updated_at = NOW()
+          WHERE id = v_item.variant_id;
+      END IF;
+    END LOOP;
+
+    UPDATE public.orders
+      SET stock_restored = TRUE
+      WHERE id = p_order_id;
+  END IF;
+
+  RETURN jsonb_build_object('already_refunded', FALSE, 'success', TRUE);
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.finalize_razorpay_refund(UUID, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.finalize_razorpay_refund(UUID, TEXT, TEXT) TO service_role;
+

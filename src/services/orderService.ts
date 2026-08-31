@@ -122,6 +122,36 @@ export async function fetchOrderDetail(orderId: string): Promise<Order | null> {
   }
 }
 
+function getFunctionEndpoint(functionName: string): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://flintaindia.com';
+  return `${origin}/.netlify/functions/${functionName}`;
+}
+
+export async function cancelRazorpayPaidOrder(orderId: string, reason?: string): Promise<Order> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (!accessToken) throw new Error('Authentication required to cancel paid order.');
+
+  const endpoint = getFunctionEndpoint('cancel-razorpay-order');
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId, accessToken, reason }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || !data.success) {
+    throw new Error(data.error || 'Failed to process refund for this order.');
+  }
+
+  const updatedOrder = await fetchOrderDetail(orderId);
+  if (!updatedOrder) {
+    throw new Error('Order refunded successfully, but updated details could not be loaded.');
+  }
+
+  return updatedOrder;
+}
+
 export async function cancelOrder(orderId: string, reason?: string): Promise<Order> {
   const { data: sessionData } = await supabase.auth.getSession();
   const userId = sessionData?.session?.user?.id;
@@ -142,12 +172,12 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<Ord
     throw new Error('Unauthorized to cancel this order.');
   }
 
-  // Security guard: Never allow cancelling paid orders
-  if (existingOrder.payment_status === 'paid') {
-    throw new Error('Cannot cancel an order that has already been paid.');
+  // Handle Paid Razorpay Orders via Serverless Refund Function
+  if (existingOrder.payment_method === 'razorpay' && existingOrder.payment_status === 'paid') {
+    return await cancelRazorpayPaidOrder(orderId, reason);
   }
 
-  const allowedStatus = ['pending', 'confirmed'];
+  const allowedStatus = ['pending', 'confirmed', 'processing'];
   if (!allowedStatus.includes(existingOrder.status)) {
     throw new Error(`Orders in "${existingOrder.status.toUpperCase()}" status cannot be cancelled.`);
   }

@@ -220,8 +220,12 @@ export interface Order {
   updated_at: string;
   razorpay_order_id?: string | null;
   razorpay_payment_id?: string | null;
+  razorpay_refund_id?: string | null;
+  refund_status?: string | null;
   confirmation_email_sent?: boolean;
+  cancellation_email_sent?: boolean;
   stock_deducted?: boolean;
+  stock_restored?: boolean;
   payment_verified_at?: string | null;
   order_items?: OrderItem[];
 }

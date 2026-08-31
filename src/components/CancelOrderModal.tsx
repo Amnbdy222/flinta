@@ -55,6 +55,8 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
     }
   };
 
+  const isPaidRazorpay = order.payment_method === 'razorpay' && order.payment_status === 'paid';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
       <div className="bg-[#FAF9F6] w-full max-w-lg hairline-all p-6 sm:p-8 space-y-6 relative shadow-2xl">
@@ -72,10 +74,12 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
               <CheckCircle2 size={30} />
             </div>
             <h3 className="font-editorial text-2xl uppercase tracking-wide text-[#0A0A0A]">
-              ORDER CANCELLED
+              {isPaidRazorpay ? 'ORDER CANCELLED & REFUNDED' : 'ORDER CANCELLED'}
             </h3>
             <p className="text-xs font-light text-[#383531] leading-relaxed max-w-sm mx-auto">
-              Your order #{displayOrderNum} has been cancelled successfully and reserved inventory has been released.
+              {isPaidRazorpay
+                ? `Your order #${displayOrderNum} has been cancelled successfully. A full refund of ₹${order.total_amount.toFixed(2)} has been initiated to your original payment method.`
+                : `Your order #${displayOrderNum} has been cancelled successfully and reserved inventory has been released.`}
             </p>
           </div>
         ) : (
@@ -84,7 +88,7 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
               <div className="flex items-center space-x-2 text-rose-900">
                 <Ban size={18} />
                 <span className="editorial-subtitle text-xs tracking-widest text-rose-900">
-                  CANCEL ORDER
+                  {isPaidRazorpay ? 'CANCEL & REFUND ORDER' : 'CANCEL ORDER'}
                 </span>
               </div>
               <h2 className="font-editorial text-2xl uppercase tracking-wide text-[#0A0A0A]">
@@ -132,9 +136,13 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
               </div>
 
               <div className="bg-rose-50/70 p-4 hairline-all space-y-1 text-xs text-rose-950">
-                <p className="font-medium uppercase tracking-wider">CANCELLATION NOTICE</p>
+                <p className="font-medium uppercase tracking-wider">
+                  {isPaidRazorpay ? 'REFUND & CANCELLATION NOTICE' : 'CANCELLATION NOTICE'}
+                </p>
                 <p className="text-[0.65rem] leading-relaxed font-light">
-                  Order cancellation is permanent. Any reserved items in this order will be released back to active stock immediately.
+                  {isPaidRazorpay
+                    ? `This order has been paid. Cancelling it will initiate a full refund of ₹${order.total_amount.toFixed(2)} to your original payment method.`
+                    : 'Order cancellation is permanent. Any reserved items in this order will be released back to active stock immediately.'}
                 </p>
               </div>
 
@@ -151,7 +159,13 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                   disabled={loading}
                   className="bg-rose-900 text-white hover:bg-rose-950 text-xs px-6 py-2.5 uppercase tracking-widest transition-colors font-medium disabled:opacity-50"
                 >
-                  {loading ? 'CANCELING...' : 'CONFIRM CANCELLATION'}
+                  {loading
+                    ? isPaidRazorpay
+                      ? 'PROCESSING REFUND...'
+                      : 'CANCELING...'
+                    : isPaidRazorpay
+                    ? 'CANCEL & REFUND'
+                    : 'CONFIRM CANCELLATION'}
                 </button>
               </div>
             </form>
