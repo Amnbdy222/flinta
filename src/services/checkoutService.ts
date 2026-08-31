@@ -140,34 +140,6 @@ export async function placeOrderCOD(
     updated_at: String(orderData.updated_at || new Date().toISOString()),
   };
 
-  // Verify shipping fee against DB store_settings in case RPC executed legacy hardcoded logic
-  try {
-    const { data: stData } = await supabase
-      .from('store_settings')
-      .select('free_shipping_threshold, flat_shipping_rate')
-      .eq('id', 1)
-      .single();
-
-    if (stData) {
-      const freeThresh = Number(stData.free_shipping_threshold ?? 999);
-      const flatRate = Number(stData.flat_shipping_rate ?? 50);
-      const expectedShip = createdOrder.subtotal >= freeThresh ? 0 : flatRate;
-      const expectedTot = Math.max(0, createdOrder.subtotal - createdOrder.discount_amount + expectedShip);
-
-      if (createdOrder.shipping_amount !== expectedShip || createdOrder.total_amount !== expectedTot) {
-        await supabase
-          .from('orders')
-          .update({ shipping_amount: expectedShip, total_amount: expectedTot })
-          .eq('id', createdOrder.id);
-
-        createdOrder.shipping_amount = expectedShip;
-        createdOrder.total_amount = expectedTot;
-      }
-    }
-  } catch (stErr) {
-    console.warn('Store settings shipping validation warning:', stErr);
-  }
-
   clearLocalGuestCartItems();
 
   // Send order confirmation email only if sendEmail is true (Default: true for COD, false for Razorpay until payment verified)
@@ -175,6 +147,78 @@ export async function placeOrderCOD(
   if (shouldSendEmail) {
     void sendOrderConfirmationEmail(createdOrder.id, shippingDetails.email);
   }
+
+  return createdOrder;
+}
+
+/**
+ * Create a pending Razorpay order via the server-side create_razorpay_pending_order RPC.
+ *
+ * The RPC creates the pending order row & order_items snapshots in DB.
+ * It DOES NOT deduct stock, DOES NOT send email, and DOES NOT convert the cart.
+ * The cart remains active until payment signature is verified.
+ */
+export async function createRazorpayPendingOrder(
+  cartId: string,
+  shippingDetails: ShippingDetails,
+  couponCode?: string | null
+): Promise<Order> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const sessionUser = sessionData?.session?.user;
+
+  if (!sessionUser) {
+    throw new Error('Authentication required. Please sign in to place an order.');
+  }
+
+  await ensureProfileExists(sessionUser.id, sessionUser.email, sessionUser.user_metadata?.full_name);
+
+  const { data: rpcData, error: rpcErr } = await supabase.rpc('create_razorpay_pending_order', {
+    p_cart_id: cartId,
+    p_shipping_name: shippingDetails.full_name,
+    p_shipping_phone: shippingDetails.phone,
+    p_shipping_address_line_1: shippingDetails.address_line_1,
+    p_shipping_address_line_2: shippingDetails.address_line_2 || '',
+    p_shipping_city: shippingDetails.city,
+    p_shipping_state: shippingDetails.state,
+    p_shipping_pincode: shippingDetails.pincode,
+    p_coupon_code: couponCode || null,
+  });
+
+  if (rpcErr) {
+    console.error('create_razorpay_pending_order RPC error:', rpcErr);
+    throw new Error(rpcErr.message || 'Failed to create Razorpay pending order.');
+  }
+
+  if (!rpcData) {
+    throw new Error('Pending order creation returned no data. Please try again.');
+  }
+
+  const orderData = rpcData as Record<string, unknown>;
+
+  const createdOrder: Order = {
+    id: String(orderData.id || ''),
+    order_number: String(orderData.order_number || ''),
+    user_id: String(orderData.user_id || ''),
+    status: (orderData.status as Order['status']) || 'pending',
+    payment_method: 'razorpay',
+    payment_status: 'pending',
+    subtotal: Number(orderData.subtotal) || 0,
+    discount_amount: Number(orderData.discount_amount) || 0,
+    shipping_amount: Number(orderData.shipping_amount) || 0,
+    total_amount: Number(orderData.total_amount) || 0,
+    coupon_id: orderData.coupon_id ? String(orderData.coupon_id) : null,
+    shipping_name: String(orderData.shipping_name || ''),
+    shipping_phone: String(orderData.shipping_phone || ''),
+    shipping_address_line_1: String(orderData.shipping_address_line_1 || ''),
+    shipping_address_line_2: orderData.shipping_address_line_2 ? String(orderData.shipping_address_line_2) : null,
+    shipping_city: String(orderData.shipping_city || ''),
+    shipping_state: String(orderData.shipping_state || ''),
+    shipping_pincode: String(orderData.shipping_pincode || ''),
+    stock_deducted: false,
+    confirmation_email_sent: false,
+    created_at: String(orderData.created_at || new Date().toISOString()),
+    updated_at: String(orderData.updated_at || new Date().toISOString()),
+  };
 
   return createdOrder;
 }

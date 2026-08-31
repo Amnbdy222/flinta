@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useStoreSettings } from '../context/StoreSettingsContext';
-import { placeOrderCOD, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
+import { placeOrderCOD, createRazorpayPendingOrder, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
 import { openRazorpayCheckoutFlow } from '../services/razorpayService';
 import { fetchOrderDetail } from '../services/orderService';
 import { sendOrderConfirmationEmail } from '../services/emailService';
@@ -122,17 +122,18 @@ export const CheckoutPage: React.FC = () => {
     };
 
     try {
-      // For COD: send email immediately. For Razorpay: do NOT send email until payment signature is verified.
+      // COD uses placeOrderCOD (deducts stock, sends COD email, converts cart).
+      // Razorpay uses createRazorpayPendingOrder (DOES NOT deduct stock, DOES NOT send email, DOES NOT convert cart).
       const isRazorpay = paymentMethod === 'razorpay';
       let createdOrder: Order;
 
       if (isRazorpay && pendingRazorpayOrderRef.current) {
         createdOrder = pendingRazorpayOrderRef.current;
+      } else if (isRazorpay) {
+        createdOrder = await createRazorpayPendingOrder(cart.id, shippingData, appliedCoupon?.code);
+        pendingRazorpayOrderRef.current = createdOrder;
       } else {
-        createdOrder = await placeOrderCOD(cart.id, shippingData, appliedCoupon?.code, { sendEmail: !isRazorpay });
-        if (isRazorpay) {
-          pendingRazorpayOrderRef.current = createdOrder;
-        }
+        createdOrder = await placeOrderCOD(cart.id, shippingData, appliedCoupon?.code);
       }
 
       // Handle Razorpay Payment flow

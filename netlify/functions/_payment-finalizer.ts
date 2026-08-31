@@ -134,6 +134,24 @@ export async function finalizeRazorpayPaymentServer(
       };
     }
 
+    // Convert active user cart
+    if (order.user_id) {
+      await dbClient
+        .from('carts')
+        .update({ status: 'converted', updated_at: new Date().toISOString() })
+        .eq('user_id', order.user_id)
+        .eq('status', 'active');
+    }
+
+    // Atomically deduct stock if not already deducted
+    if (!order.stock_deducted) {
+      try {
+        await dbClient.rpc('deduct_order_stock_atomic', { p_order_id: orderId });
+      } catch (sErr) {
+        console.warn('[PaymentFinalizer] Fallback stock deduction warning:', sErr);
+      }
+    }
+
     let emailSent = false;
     if (!order.confirmation_email_sent) {
       await dbClient
