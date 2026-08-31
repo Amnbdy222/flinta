@@ -52,6 +52,9 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
     return {
       ...DEFAULT_STORE_SETTINGS,
       ...data,
+      free_shipping_threshold: Number(data.free_shipping_threshold ?? DEFAULT_STORE_SETTINGS.free_shipping_threshold),
+      flat_shipping_rate: Number(data.flat_shipping_rate ?? DEFAULT_STORE_SETTINGS.flat_shipping_rate),
+      cod_extra_charge: Number(data.cod_extra_charge ?? DEFAULT_STORE_SETTINGS.cod_extra_charge),
       social_links: {
         ...DEFAULT_STORE_SETTINGS.social_links,
         ...(data.social_links || {}),
