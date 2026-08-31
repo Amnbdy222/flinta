@@ -122,17 +122,32 @@ export async function getOrCreateActiveCart(): Promise<Cart> {
             .single();
 
           if (insertError || !newCart) {
-            console.warn('DB user cart creation error:', insertError?.message);
-            return {
-              id: 'user_fallback_' + userId,
-              user_id: userId,
-              session_id: sessionId,
-              status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
+            console.warn('DB user cart creation warning/conflict:', insertError?.message);
+
+            // Fetch newly created active cart in case of concurrent insert conflict (409)
+            const { data: conflictCart } = await supabase
+              .from('carts')
+              .select('*')
+              .or(`user_id.eq.${userId},session_id.eq.${sessionId}`)
+              .eq('status', 'active')
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (conflictCart && conflictCart.length > 0) {
+              activeCart = conflictCart[0] as Cart;
+            } else {
+              return {
+                id: 'user_fallback_' + userId,
+                user_id: userId,
+                session_id: sessionId,
+                status: 'active',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+            }
+          } else {
+            activeCart = newCart as Cart;
           }
-          activeCart = newCart as Cart;
         }
       }
 
@@ -176,6 +191,21 @@ export async function getOrCreateActiveCart(): Promise<Cart> {
       .single();
 
     if (guestInsertError || !newGuestCart) {
+      console.warn('DB guest cart creation warning/conflict:', guestInsertError?.message);
+
+      // Re-fetch newly created active guest cart in case of concurrent insert conflict (409)
+      const { data: retryGuestCarts } = await supabase
+        .from('carts')
+        .select('*')
+        .eq('session_id', sessionId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (retryGuestCarts && retryGuestCarts.length > 0) {
+        return retryGuestCarts[0] as Cart;
+      }
+
       // Return local virtual guest cart
       return {
         id: 'guest_local_' + sessionId,
