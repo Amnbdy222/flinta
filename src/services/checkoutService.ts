@@ -148,7 +148,26 @@ export async function placeOrderCOD(
     void sendOrderConfirmationEmail(createdOrder.id, shippingDetails.email);
   }
 
+  // Trigger automated Shiprocket courier booking for COD
+  triggerShiprocketShipment(createdOrder.id);
+
   return createdOrder;
+}
+
+function triggerShiprocketShipment(orderId: string): void {
+  const endpoint =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'https://flintaindia.com/.netlify/functions/create-shipment'
+      : '/.netlify/functions/create-shipment';
+
+  fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orderId }),
+  }).catch((err) => {
+    console.warn('[checkoutService] Shiprocket background trigger warning:', err);
+  });
 }
 
 /**

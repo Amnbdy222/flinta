@@ -227,6 +227,12 @@ export interface Order {
   stock_deducted?: boolean;
   stock_restored?: boolean;
   payment_verified_at?: string | null;
+  shiprocket_order_id?: string | null;
+  shiprocket_shipment_id?: string | null;
+  courier_name?: string | null;
+  awb_code?: string | null;
+  tracking_url?: string | null;
+  shipment_status?: string | null;
   order_items?: OrderItem[];
 }
 

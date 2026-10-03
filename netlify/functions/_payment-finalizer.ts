@@ -93,7 +93,7 @@ export async function finalizeRazorpayPaymentServer(
     // JS Fallback: update order directly using Supabase client
     const { data: order, error: fetchErr } = await dbClient
       .from('orders')
-      .select('id, payment_status, status, confirmation_email_sent')
+      .select('id, user_id, payment_status, status, stock_deducted, confirmation_email_sent')
       .eq('id', orderId)
       .single();
 
@@ -167,6 +167,16 @@ export async function finalizeRazorpayPaymentServer(
       }
     }
 
+    // Trigger Shiprocket shipment creation (non-blocking for payment)
+    if (process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
+      try {
+        const { processShiprocketOrderForOrder } = await import('./_shiprocket-client');
+        void processShiprocketOrderForOrder(dbClient, orderId);
+      } catch (shipErr) {
+        console.warn('[PaymentFinalizer] Shiprocket fallback trigger warning:', shipErr);
+      }
+    }
+
     return { success: true, alreadyPaid: false, emailSent };
   }
 
@@ -186,6 +196,16 @@ export async function finalizeRazorpayPaymentServer(
     } catch (emailErr) {
       // Non-blocking: log but don't fail the payment
       console.warn('[PaymentFinalizer] Email trigger warning (non-blocking):', emailErr);
+    }
+  }
+
+  // Trigger Shiprocket shipment creation (non-blocking for payment)
+  if (process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
+    try {
+      const { processShiprocketOrderForOrder } = await import('./_shiprocket-client');
+      void processShiprocketOrderForOrder(dbClient, orderId);
+    } catch (shipErr) {
+      console.warn('[PaymentFinalizer] Shiprocket background trigger warning (non-blocking):', shipErr);
     }
   }
 

@@ -23,6 +23,7 @@ import {
   DollarSign,
   Clock,
   Ban,
+  Truck,
 } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
 
@@ -430,6 +431,33 @@ export const OrderDetailPage: React.FC = () => {
                 {order.payment_method === 'cod' ? 'CASH ON DELIVERY (COD)' : 'RAZORPAY SECURE'}
               </p>
             </div>
+
+            {order.awb_code && (
+              <div className="space-y-1.5 hairline-t pt-2.5">
+                <div className="flex items-center space-x-1.5 text-[0.65rem] sm:text-xs font-semibold tracking-[0.2em] text-[#0A0A0A] uppercase">
+                  <Truck size={13} className="text-[#736E65]" />
+                  <span>SHIPMENT & TRACKING</span>
+                </div>
+                <div className="pl-5 text-xs text-[#383531] font-light space-y-1">
+                  {order.courier_name && (
+                    <p className="font-medium text-[#0A0A0A]">Courier: {order.courier_name}</p>
+                  )}
+                  <p className="text-[0.7rem] text-[#736E65]">
+                    AWB Code: <span className="font-mono text-[#0A0A0A] font-medium">{order.awb_code}</span>
+                  </p>
+                  {order.tracking_url && (
+                    <a
+                      href={order.tracking_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-[0.65rem] tracking-widest uppercase font-semibold text-[#0A0A0A] underline hover:opacity-75 transition-opacity pt-1"
+                    >
+                      LIVE SHIPMENT TRACKING &rarr;
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* TOTALS */}
