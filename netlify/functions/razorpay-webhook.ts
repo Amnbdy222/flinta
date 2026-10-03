@@ -27,9 +27,9 @@ export const handler: Handler = async (event) => {
   // ── Strict env var checks ──
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://klzwqmphtyvwubfqhgbf.supabase.co';
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsendxbXBodHl2d3ViZnFoZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjU5NzcsImV4cCI6MjEwMzE0MTk3N30.NsZpViSPATovps_ON_wSIt0sS5ludqAL9rxovdgYfug';
-  const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '73dbiTBIRGyL5og73WSkCy1e';
-  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TVZgsx8bPHyJa7';
-  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '73dbiTBIRGyL5og73WSkCy1e';
+  const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'xEnF6f89t9eGd6PYgN0RilBM';
+  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TjKvAUVtmcfouT';
+  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'xEnF6f89t9eGd6PYgN0RilBM';
 
   // ── 1. Verify x-razorpay-signature ──
   const signature = event.headers['x-razorpay-signature'] || event.headers['X-Razorpay-Signature'];
