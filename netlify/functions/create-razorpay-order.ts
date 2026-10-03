@@ -130,6 +130,7 @@ export const handler: Handler = async (event) => {
             body: JSON.stringify({
               order_id: existingRzpOrder.id,
               razorpay_order_id: existingRzpOrder.id,
+              key_id: RAZORPAY_KEY_ID,
               amount: existingRzpOrder.amount,
               currency: existingRzpOrder.currency,
               receipt: existingRzpOrder.receipt,
@@ -185,6 +186,7 @@ export const handler: Handler = async (event) => {
       body: JSON.stringify({
         order_id: razorpayOrder.id,
         razorpay_order_id: razorpayOrder.id,
+        key_id: RAZORPAY_KEY_ID,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         receipt: razorpayOrder.receipt,

@@ -65,7 +65,7 @@ function getFunctionEndpoint(functionName: string): string {
 export async function createRazorpayOrderBackend(
   orderId: string,
   accessToken: string
-): Promise<{ order_id: string; razorpay_order_id: string; amount: number; currency: string }> {
+): Promise<{ order_id: string; razorpay_order_id: string; key_id?: string; amount: number; currency: string }> {
   const endpoint = getFunctionEndpoint('create-razorpay-order');
   const res = await fetch(endpoint, {
     method: 'POST',
@@ -176,7 +176,7 @@ export async function openRazorpayCheckoutFlow(
 
   // 3. Open Razorpay Standard Checkout Modal
   const rzpOptions = {
-    key: razorpayKey,
+    key: rzpOrder.key_id || razorpayKey || 'rzp_test_TjKvAUVtmcfouT',
     order_id: rzpOrder.order_id,
     amount: rzpOrder.amount,
     currency: rzpOrder.currency || 'INR',
