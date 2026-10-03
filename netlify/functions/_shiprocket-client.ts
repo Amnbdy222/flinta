@@ -90,7 +90,7 @@ export async function createShiprocketOrder(
   orderItems: Record<string, any>[]
 ): Promise<ShiprocketOrderResult> {
   const token = await getShiprocketToken();
-  const pickupLocation = process.env.SHIPROCKET_PICKUP_LOCATION || 'Home';
+  const pickupLocation = process.env.SHIPROCKET_PICKUP_LOCATION || 'warehouse-1';
 
   // Map order items for Shiprocket
   const items: ShiprocketOrderItemPayload[] = (orderItems || []).map((item, idx) => ({
