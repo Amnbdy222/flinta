@@ -165,7 +165,7 @@ export async function openRazorpayCheckoutFlow(
     throw new Error(errorMsg);
   }
 
-  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TjKvAUVtmcfouT';
   if (!razorpayKey) {
     const errorMsg = 'VITE_RAZORPAY_KEY_ID is missing in frontend environment variables.';
     if (onError) onError(errorMsg);
