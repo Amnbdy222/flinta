@@ -10,7 +10,7 @@ export const MaintenancePage: React.FC = () => {
       {/* HEADER */}
       <div className="flex items-center justify-between border-b border-[#0A0A0A]/10 pb-6">
         <div className="flex items-center space-x-2.5">
-          <img src="/flint.png" alt="FLINT A" className="h-8 w-auto object-contain" />
+          <img src="/image.png" alt="FLINT A" className="h-8 sm:h-9 w-auto object-contain rounded-full shadow-xs" />
           <span className="font-brand text-xl sm:text-2xl font-bold tracking-[0.25em] uppercase">
             {settings.store_name}
           </span>

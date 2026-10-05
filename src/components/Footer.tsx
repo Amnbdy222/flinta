@@ -24,9 +24,9 @@ export const Footer: React.FC = () => {
           <div className="col-span-2 lg:col-span-2 space-y-4 sm:space-y-5">
             <Link to="/" className="inline-flex items-center space-x-2.5">
               <img
-                src="/flint.png"
+                src="/image.png"
                 alt={`${settings.store_name} Logo`}
-                className="h-8 sm:h-9 w-auto object-contain shrink-0"
+                className="h-9 sm:h-11 w-auto object-contain shrink-0 rounded-full shadow-xs"
               />
               <span className="font-brand text-xl sm:text-2xl font-bold tracking-[0.25em] text-[#0A0A0A] uppercase">
                 {settings.store_name}

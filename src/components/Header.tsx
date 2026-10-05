@@ -73,9 +73,9 @@ export const Header: React.FC = () => {
               aria-label="FLINT A Home"
             >
               <img
-                src="/flint.png"
+                src="/image.png"
                 alt="FLINT A Logo"
-                className="h-6 sm:h-8 md:h-9 w-auto object-contain shrink-0"
+                className="h-7 sm:h-9 md:h-10 w-auto object-contain shrink-0 rounded-full shadow-xs"
               />
               <span className="font-brand text-[0.75rem] xs:text-[0.85rem] sm:text-xl md:text-2xl lg:text-3xl font-bold tracking-[0.1em] sm:tracking-[0.25em] text-[#000000] uppercase whitespace-nowrap">
                 FLINT A
@@ -161,7 +161,7 @@ export const Header: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5 hairline-b">
               <Link to="/" onClick={() => setMobileMenuOpen(false)} className="flex items-center space-x-2">
-                <img src="/flintlogo.png" alt="FLINT A" className="h-6 w-auto object-contain shrink-0" />
+                <img src="/image.png" alt="FLINT A" className="h-7 w-auto object-contain shrink-0 rounded-full" />
                 <span className="font-brand text-xl font-bold tracking-[0.22em] text-[#000000] uppercase">
                   FLINT A
                 </span>

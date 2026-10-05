@@ -168,7 +168,7 @@ export const LoginPage: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent flex flex-col justify-between p-5 sm:p-7 text-[#FAF9F6]">
               <div className="flex items-center space-x-2">
-                <img src="/flintlogo_white.png" alt="FLINT A" className="h-5 sm:h-6 w-auto object-contain shrink-0" />
+                <img src="/image.png" alt="FLINT A" className="h-6 sm:h-7 w-auto object-contain shrink-0 rounded-full" />
                 <span className="font-brand text-base sm:text-lg font-bold tracking-[0.25em] uppercase">
                   FLINT A
                 </span>
