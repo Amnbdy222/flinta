@@ -149,12 +149,12 @@ export async function placeOrderCOD(
   }
 
   // Trigger automated Shiprocket courier booking for COD
-  triggerShiprocketShipment(createdOrder.id);
+  triggerShiprocketShipment(createdOrder.id, shippingDetails.email);
 
   return createdOrder;
 }
 
-function triggerShiprocketShipment(orderId: string): void {
+export function triggerShiprocketShipment(orderId: string, customerEmail?: string): void {
   const endpoint =
     typeof window !== 'undefined' &&
     (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -164,7 +164,7 @@ function triggerShiprocketShipment(orderId: string): void {
   fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ orderId }),
+    body: JSON.stringify({ orderId, customerEmail }),
   }).catch((err) => {
     console.warn('[checkoutService] Shiprocket background trigger warning:', err);
   });
@@ -191,8 +191,32 @@ export async function createRazorpayPendingOrder(
 
   await ensureProfileExists(sessionUser.id, sessionUser.email, sessionUser.user_metadata?.full_name);
 
+  // Resolve Valid Supabase Cart UUID (Sync guest local items to DB cart if needed)
+  let targetCartId = cartId;
+
+  if (!isValidUUID(targetCartId)) {
+    const dbCart = await getOrCreateActiveCart();
+    targetCartId = dbCart.id;
+
+    const localGuestItems = getLocalGuestCartItems();
+    if (localGuestItems.length > 0 && isValidUUID(targetCartId)) {
+      for (const item of localGuestItems) {
+        try {
+          await addItemToCart(targetCartId, item.variant_id, item.quantity);
+        } catch (mErr) {
+          console.warn('Cart item sync warning during Razorpay checkout:', mErr);
+        }
+      }
+      clearLocalGuestCartItems();
+    }
+  }
+
+  if (!isValidUUID(targetCartId)) {
+    throw new Error('Unable to resolve active cart session. Please refresh and try again.');
+  }
+
   const { data: rpcData, error: rpcErr } = await supabase.rpc('create_razorpay_pending_order', {
-    p_cart_id: cartId,
+    p_cart_id: targetCartId,
     p_shipping_name: shippingDetails.full_name,
     p_shipping_phone: shippingDetails.phone,
     p_shipping_address_line_1: shippingDetails.address_line_1,

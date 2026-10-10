@@ -129,7 +129,9 @@ export const OrderDetailPage: React.FC = () => {
   const isEligibleForReturnExchange =
     order.status === 'delivered' || order.status === 'confirmed' || order.status === 'shipped';
 
-  const isCancellable = ['pending', 'confirmed', 'processing'].includes(order.status);
+  const isCancellable =
+    ['pending', 'confirmed', 'processing'].includes(order.status) &&
+    !(order.payment_method === 'razorpay' && order.payment_status !== 'paid');
 
   return (
     <AccountLayout activeKey="orders" title={`Order ${formatOrderNumber(order.order_number)}`}>
@@ -369,7 +371,7 @@ export const OrderDetailPage: React.FC = () => {
                     <img
                       src={item.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400&auto=format&fit=crop'}
                       alt={item.product_name_snapshot}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-105"
+                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/img:scale-105"
                     />
                   </Link>
 

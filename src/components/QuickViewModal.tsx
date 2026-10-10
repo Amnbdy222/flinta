@@ -126,12 +126,12 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen,
         <Link
           to={`/products/${product.slug}`}
           onClick={onClose}
-          className="w-full md:w-1/2 aspect-[4/5] bg-[#F0EFEA] relative overflow-hidden flex-shrink-0 group cursor-pointer block"
+          className="w-full md:w-1/2 aspect-[3/4] bg-[#F0EFEA] relative overflow-hidden flex-shrink-0 group cursor-pointer block"
         >
           <img
             src={product.primaryImage}
             alt={product.name}
-            className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
         </Link>
 

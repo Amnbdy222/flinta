@@ -123,7 +123,9 @@ export const OrdersListPage: React.FC = () => {
 
               const activeReturn = returnsMap[order.id];
               const activeExchange = exchangesMap[order.id];
-              const isCancellable = ['pending', 'confirmed', 'processing'].includes(order.status);
+              const isCancellable =
+                ['pending', 'confirmed', 'processing'].includes(order.status) &&
+                !(order.payment_method === 'razorpay' && order.payment_status !== 'paid');
 
               return (
                 <div
@@ -137,7 +139,7 @@ export const OrdersListPage: React.FC = () => {
                         <img
                           src={order.order_items[0].image_url}
                           alt={order.order_items[0].product_name_snapshot}
-                          className="w-12 h-14 object-cover border border-[#0A0A0A]/10 shrink-0"
+                          className="w-12 h-14 object-cover object-top border border-[#0A0A0A]/10 shrink-0"
                         />
                       ) : (
                         <div className="w-12 h-14 bg-[#E6E4DD]/40 border border-[#0A0A0A]/10 flex items-center justify-center shrink-0">

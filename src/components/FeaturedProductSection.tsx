@@ -35,7 +35,7 @@ export const FeaturedProductSection: React.FC<FeaturedProductSectionProps> = ({ 
                 src={product.primaryImage}
                 alt={product.name}
                 loading="lazy"
-                className="w-full h-full object-cover object-center transition-transform duration-1000 group-hover:scale-105"
+                className="w-full h-full object-cover object-top transition-transform duration-1000 group-hover:scale-105"
               />
               <div className="absolute top-6 left-6">
                 <span className="badge-editorial bg-[#FAF9F6]/90 backdrop-blur-sm">FEATURED SELECTION</span>

@@ -167,7 +167,7 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
                         <img
                           src={item.image_url}
                           alt={item.product_name_snapshot}
-                          className="w-10 h-12 object-cover border border-[#0A0A0A]/10"
+                          className="w-10 h-12 object-cover object-top border border-[#0A0A0A]/10"
                         />
                       )}
                       <div className="flex-1 text-xs">

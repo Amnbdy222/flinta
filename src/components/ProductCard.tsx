@@ -23,13 +23,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const wishlisted = isWishlisted(product.id);
 
-  // Aspect ratio class selection
+  // Aspect ratio class selection (aspect-[3/4] preserves full model silhouette and headroom)
   const aspectClass =
     aspectRatio === 'portrait'
       ? 'aspect-[3/4]'
       : aspectRatio === 'square'
       ? 'aspect-square'
-      : 'aspect-[4/5]';
+      : 'aspect-[3/4]';
 
   // Determine active swatch color & matching image
   const selectedColor = product.colors?.[selectedColorIndex];
@@ -93,19 +93,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               src={currentDisplayImage}
               alt={product.name}
               loading="lazy"
-              className="w-full h-full object-cover object-center transition-transform duration-700 ease-out md:group-hover:scale-105"
+              className="w-full h-full object-cover object-top transition-transform duration-700 ease-out md:group-hover:scale-105"
             />
           </Link>
 
           {/* EDITORIAL FEATURE BADGES */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col space-y-1.5 pointer-events-none">
+          <div className="absolute top-3 left-3 z-10 flex flex-col items-start space-y-1.5 pointer-events-none">
             {product.is_best_seller && (
-              <span className="bg-[#0A0A0A] text-[#FAF9F6] text-[0.55rem] font-medium tracking-[0.2em] uppercase px-2 py-0.5 shadow-sm">
+              <span className="bg-[#0A0A0A] text-[#FAF9F6] text-[0.55rem] font-bold tracking-[0.2em] uppercase px-2 py-0.5 shadow-sm">
                 BEST SELLER
               </span>
             )}
             {product.is_new_arrival && (
-              <span className="bg-[#FAF9F6] text-[#0A0A0A] hairline-all text-[0.55rem] font-medium tracking-[0.2em] uppercase px-2 py-0.5 shadow-sm">
+              <span className="bg-[#FAF9F6] text-[#0A0A0A] border border-[#0A0A0A]/40 text-[0.55rem] font-bold tracking-[0.2em] uppercase px-2 py-0.5 shadow-sm">
                 NEW ARRIVAL
               </span>
             )}
@@ -114,14 +114,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 TOP DEAL
               </span>
             )}
+            {product.compareAtPrice && product.compareAtPrice > product.price && (
+              <span className="bg-[#FAF9F6]/95 backdrop-blur-sm text-[#0A0A0A] border border-[#0A0A0A]/30 text-[0.55rem] font-semibold tracking-[0.2em] uppercase px-2 py-0.5 shadow-sm">
+                ARCHIVE PRICE
+              </span>
+            )}
           </div>
-
-          {/* TOP LEFT BADGE */}
-          {product.compareAtPrice && product.compareAtPrice > product.price && (
-            <div className="absolute top-3 left-3 z-10 pointer-events-none">
-              <span className="badge-editorial">ARCHIVE PRICE</span>
-            </div>
-          )}
 
           {/* TOP RIGHT WISHLIST BUTTON */}
           <button

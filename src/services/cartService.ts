@@ -71,9 +71,16 @@ export function clearLocalGuestCartItems(): void {
   }
 }
 
+// Validate standard 36-character UUID format
+export function isValidUUID(str: string): boolean {
+  if (!str) return false;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 // Fetch active cart record or create one in Supabase (with fallback guest support)
 export async function getOrCreateActiveCart(): Promise<Cart> {
-  const sessionId = getOrCreateCartSessionId();
+  let sessionId = getOrCreateCartSessionId();
 
   try {
     const { data: userData } = await supabase.auth.getUser();
@@ -103,15 +110,19 @@ export async function getOrCreateActiveCart(): Promise<Cart> {
           .order('created_at', { ascending: false })
           .limit(1);
 
-        if (sessionCarts && sessionCarts.length > 0) {
+        if (sessionCarts && sessionCarts.length > 0 && (!sessionCarts[0].user_id || sessionCarts[0].user_id === userId)) {
           activeCart = sessionCarts[0] as Cart;
           if (!activeCart.user_id) {
             await supabase.from('carts').update({ user_id: userId }).eq('id', activeCart.id);
             activeCart.user_id = userId;
           }
         } else {
-          // Create new user cart
-          const { data: newCart, error: insertError } = await supabase
+          // If sessionId is already bound to another user or collision occurs, generate fresh sessionId
+          sessionId = 'sess_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+          localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+
+          // Create new user cart with fresh sessionId
+          let { data: newCart, error: insertError } = await supabase
             .from('carts')
             .insert({
               user_id: userId,
@@ -121,18 +132,44 @@ export async function getOrCreateActiveCart(): Promise<Cart> {
             .select()
             .single();
 
-          if (insertError || !newCart) {
-            console.warn('DB user cart creation error:', insertError?.message);
-            return {
-              id: 'user_fallback_' + userId,
-              user_id: userId,
-              session_id: sessionId,
-              status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            };
+          if (insertError && (insertError.code === '23505' || insertError.message.includes('unique constraint') || insertError.message.includes('idx_carts_unique_active_session'))) {
+            console.warn('DB user cart collision on session_id, retrying with fresh session ID...');
+            sessionId = 'sess_' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
+            localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+
+            const retry = await supabase
+              .from('carts')
+              .insert({
+                user_id: userId,
+                session_id: sessionId,
+                status: 'active',
+              })
+              .select()
+              .single();
+
+            newCart = retry.data;
+            insertError = retry.error;
           }
-          activeCart = newCart as Cart;
+
+          if (newCart) {
+            activeCart = newCart as Cart;
+          } else {
+            // Check if active cart exists for this user
+            const { data: retryUserCarts } = await supabase
+              .from('carts')
+              .select('*')
+              .eq('user_id', userId)
+              .eq('status', 'active')
+              .order('created_at', { ascending: false })
+              .limit(1);
+
+            if (retryUserCarts && retryUserCarts.length > 0) {
+              activeCart = retryUserCarts[0] as Cart;
+            } else {
+              console.warn('Could not create DB user cart:', insertError?.message);
+              throw new Error(insertError?.message || 'Failed to initialize active shopping bag.');
+            }
+          }
         }
       }
 

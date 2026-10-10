@@ -181,7 +181,7 @@ export const CartDrawer: React.FC = () => {
                       <img
                         src={item.image_url}
                         alt={item.product_name}
-                        className="w-20 h-24 object-cover bg-[#F0EFEA] hairline-all"
+                        className="w-20 h-24 object-cover object-top bg-[#F0EFEA] hairline-all"
                       />
                     </Link>
 

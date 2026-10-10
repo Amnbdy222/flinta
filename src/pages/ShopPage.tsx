@@ -23,6 +23,7 @@ export const ShopPage: React.FC = () => {
   const [categoryBanner, setCategoryBanner] = useState<StorefrontBanner | null>(null);
 
   // Extract filter state from URL parameters
+  const category = searchParams.get('category') || undefined;
   const color = searchParams.get('color') || undefined;
   const size = searchParams.get('size') || undefined;
   const minPriceParam = searchParams.get('minPrice');
@@ -71,6 +72,7 @@ export const ShopPage: React.FC = () => {
     fetchPaginatedProducts({
       page: currentPage,
       limit: 12,
+      category,
       color,
       size,
       minPrice,
@@ -96,7 +98,7 @@ export const ShopPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [currentPage, color, size, minPrice, maxPrice, inStockOnly, sort, searchQuery]);
+  }, [currentPage, category, color, size, minPrice, maxPrice, inStockOnly, sort, searchQuery]);
 
   // Helper to update search params while preserving unrelated keys
   const updateUrlParams = (newParams: Record<string, string | undefined>) => {
@@ -191,7 +193,7 @@ export const ShopPage: React.FC = () => {
       {/* CATEGORY BANNER HEADER */}
       {categoryBanner ? (
         <div className="w-full relative bg-[#0A0A0A] text-[#FAF9F6] mb-8 sm:mb-10 md:mb-12 overflow-hidden hairline-b">
-          <div className="h-48 sm:h-64 md:h-80 lg:h-96 w-full relative">
+          <div className="h-64 sm:h-72 md:h-80 lg:h-[400px] w-full relative">
             <picture className="w-full h-full block">
               {categoryBanner.mobile_image_url && (
                 <source media="(max-width: 767px)" srcSet={categoryBanner.mobile_image_url} />
@@ -199,15 +201,15 @@ export const ShopPage: React.FC = () => {
               <img
                 src={categoryBanner.image_url}
                 alt={categoryBanner.title || 'Category Banner'}
-                className="w-full h-full object-cover opacity-90"
+                className="w-full h-full object-cover object-top opacity-90"
               />
             </picture>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-5 space-y-2 sm:space-y-3">
-              <span className="editorial-subtitle text-[#FAF9F6]/80 block">
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A]/90 via-[#0A0A0A]/40 to-[#0A0A0A]/20" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4 sm:px-6 space-y-1.5 sm:space-y-3">
+              <span className="editorial-subtitle text-[#FAF9F6]/85 block text-[0.65rem] sm:text-xs tracking-[0.25em] drop-shadow-sm">
                 {categoryBanner.subtitle || 'GARMENT CATALOGUE'}
               </span>
-              <h1 className="font-editorial text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-light uppercase tracking-tight text-[#FAF9F6]">
+              <h1 className="font-editorial text-[1.15rem] min-[375px]:text-[1.35rem] min-[420px]:text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-light uppercase tracking-tight text-[#FAF9F6] max-w-4xl px-2 drop-shadow-md">
                 {categoryBanner.title || (searchQuery ? `"${searchQuery.toUpperCase()}"` : 'SHOP ALL GARMENTS')}
               </h1>
             </div>
@@ -243,6 +245,22 @@ export const ShopPage: React.FC = () => {
             onSortChange={handleSortChange}
             onClearAll={handleClearAll}
           />
+          {category && (
+            <div className="pt-3 flex items-center gap-2 flex-wrap">
+              <span className="text-[0.65rem] tracking-[0.2em] uppercase text-[#736E65]">CATEGORY:</span>
+              <span className="inline-flex items-center gap-2 px-3 py-1 bg-[#0A0A0A] text-[#FAF9F6] text-[0.7rem] uppercase tracking-wider font-medium">
+                {category}
+                <button
+                  type="button"
+                  onClick={() => updateUrlParams({ category: undefined, page: '1' })}
+                  className="hover:text-red-400 font-bold ml-1 transition-colors"
+                  aria-label="Remove category filter"
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
+          )}
         </div>
 
         {/* PRODUCT GRID */}

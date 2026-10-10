@@ -44,7 +44,18 @@ export async function fetchCustomerOrders(): Promise<Order[]> {
     }
 
     const rawOrders = (data || []) as unknown as RawOrderRecord[];
-    const formattedOrders = rawOrders.map((order) => {
+    const validOrders = rawOrders.filter((order) => {
+      // Exclude incomplete/unpaid online checkout attempts
+      if (
+        order.payment_method === 'razorpay' &&
+        order.payment_status !== 'paid' &&
+        order.payment_status !== 'refunded'
+      ) {
+        return false;
+      }
+      return true;
+    });
+    const formattedOrders = validOrders.map((order) => {
       if (order.order_items) {
         order.order_items = order.order_items.map((item) => {
           let imageUrl = '';
@@ -96,6 +107,13 @@ export async function fetchOrderDetail(orderId: string): Promise<Order | null> {
     }
 
     const orderData = data as unknown as RawOrderRecord;
+    if (
+      orderData.payment_method === 'razorpay' &&
+      orderData.payment_status !== 'paid' &&
+      orderData.payment_status !== 'refunded'
+    ) {
+      return null;
+    }
     if (orderData.order_items) {
       orderData.order_items = orderData.order_items.map((item) => {
         let imageUrl = '';
@@ -172,9 +190,13 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<Ord
     throw new Error('Unauthorized to cancel this order.');
   }
 
-  // Handle Paid Razorpay Orders via Serverless Refund Function
-  if (existingOrder.payment_method === 'razorpay' && existingOrder.payment_status === 'paid') {
-    return await cancelRazorpayPaidOrder(orderId, reason);
+  // Handle Razorpay Orders: only paid orders can be cancelled & refunded
+  if (existingOrder.payment_method === 'razorpay') {
+    if (existingOrder.payment_status === 'paid') {
+      return await cancelRazorpayPaidOrder(orderId, reason);
+    } else {
+      throw new Error('Unpaid online payment attempts cannot be cancelled.');
+    }
   }
 
   const allowedStatus = ['pending', 'confirmed', 'processing'];
@@ -238,33 +260,8 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<Ord
     throw new Error('Failed to update order status in database. Permission or record lock issue.');
   }
 
-  // Restock inventory for cancelled order items
-  if (existingOrder.order_items && existingOrder.order_items.length > 0) {
-    for (const item of existingOrder.order_items) {
-      if (item.variant_id && item.quantity > 0) {
-        try {
-          const { data: variant } = await supabase
-            .from('product_variants')
-            .select('stock')
-            .eq('id', item.variant_id)
-            .single();
-
-          if (variant) {
-            await supabase
-              .from('product_variants')
-              .update({
-                stock: (variant.stock || 0) + item.quantity,
-                updated_at: new Date().toISOString(),
-              })
-              .eq('id', item.variant_id);
-          }
-        } catch (restockErr) {
-          console.error('Error restocking variant:', restockErr);
-        }
-      }
-    }
-  }
-
+  // Note: Inventory restocking and transaction logging are handled atomically
+  // by the server-side cancel_order RPC / finalize_razorpay_refund function.
   const cancelledOrder = { ...existingOrder, status: 'cancelled' } as Order;
 
   // Fire-and-forget: send cancellation email via Netlify Function (fetches DB order)

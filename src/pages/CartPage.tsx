@@ -145,7 +145,7 @@ export const CartPage: React.FC = () => {
                       <img
                         src={item.image_url}
                         alt={item.product_name}
-                        className="w-20 h-24 sm:w-24 sm:h-32 object-cover bg-[#F0EFEA] hairline-all"
+                        className="w-20 h-24 sm:w-24 sm:h-32 object-cover object-top bg-[#F0EFEA] hairline-all"
                       />
                     </Link>
                     <div className="space-y-1 sm:space-y-1.5 flex-1 min-w-0">

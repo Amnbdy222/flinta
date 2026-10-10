@@ -41,7 +41,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, altText 
     <div className="w-full max-w-lg mx-auto space-y-4">
       {/* DESKTOP & MOBILE MAIN GALLERY CONTAINER */}
       <div
-        className="relative w-full aspect-[3/4] max-h-[560px] md:max-h-[600px] bg-[#F0EFEA] overflow-hidden hairline-all group select-none cursor-pointer flex items-center justify-center"
+        className="relative w-full aspect-[3/4] sm:aspect-[2/3] max-h-[680px] md:max-h-[740px] bg-[#F0EFEA] overflow-hidden hairline-all group select-none cursor-pointer flex items-center justify-center"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onClick={() => setIsLightboxOpen(true)}
@@ -50,7 +50,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, altText 
           src={safeImages[activeIndex] || safeImages[0]}
           alt={`${altText} - Image ${activeIndex + 1}`}
           loading="lazy"
-          className="w-full h-full max-h-[560px] md:max-h-[600px] object-cover object-center transition-all duration-500 group-hover:scale-105"
+          className="w-full h-full object-cover object-top transition-all duration-500 group-hover:scale-105"
         />
 
         {/* LIGHTBOX EXPAND ICON */}
@@ -93,7 +93,7 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, altText 
                 src={imgUrl}
                 alt={`Thumbnail ${idx + 1}`}
                 loading="lazy"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-top"
               />
             </button>
           ))}

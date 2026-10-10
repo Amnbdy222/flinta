@@ -91,6 +91,7 @@ export function formatProduct(raw: Product, index: number = 0): FormattedProduct
 export interface FetchProductsOptions {
   page?: number;
   limit?: number;
+  category?: string;
   color?: string;
   size?: string;
   minPrice?: number;
@@ -122,6 +123,10 @@ export async function fetchPaginatedProducts(
       .from('products')
       .select('*, product_variants(*), product_images(*)', { count: 'exact' })
       .eq('status', 'active');
+
+    if (options.category && options.category.trim() !== '') {
+      query = query.ilike('category', `%${options.category.trim()}%`);
+    }
 
     if (options.search && options.search.trim() !== '') {
       const term = `%${options.search.trim()}%`;

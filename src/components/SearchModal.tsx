@@ -148,7 +148,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                       <img
                         src={product.primaryImage}
                         alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform"
                       />
                     </div>
                     <div className="flex flex-col justify-center space-y-1">

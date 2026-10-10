@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { fetchCustomerAddresses, createAddress, deleteAddress } from '../services/addressService';
 import { Address } from '../types/database.types';
 import { EmptyState } from '../components/EmptyState';
-import { MapPin, Plus, Trash2, AlertCircle } from 'lucide-react';
+import { lookupPincode } from '../services/pincodeService';
+import { MapPin, Plus, Trash2, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
 
 export const AddressesPage: React.FC = () => {
@@ -19,6 +20,52 @@ export const AddressesPage: React.FC = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+
+  // Pincode auto-lookup state
+  const [isPincodeLoading, setIsPincodeLoading] = useState(false);
+  const [pincodeSuccess, setPincodeSuccess] = useState(false);
+  const [detectedAreas, setDetectedAreas] = useState<string[]>([]);
+  const [selectedArea, setSelectedArea] = useState<string>('');
+
+  const handlePincodeChange = async (newVal: string) => {
+    const cleaned = newVal.replace(/[^0-9]/g, '').slice(0, 6);
+    setPincode(cleaned);
+    setPincodeSuccess(false);
+
+    if (cleaned.length === 6) {
+      setIsPincodeLoading(true);
+      try {
+        const details = await lookupPincode(cleaned);
+        if (details) {
+          if (details.city) setCity(details.city);
+          if (details.state) setState(details.state);
+          setDetectedAreas(details.areas || []);
+          setPincodeSuccess(true);
+          if (details.areas?.length === 1 && !line2) {
+            setLine2(details.areas[0]);
+            setSelectedArea(details.areas[0]);
+          }
+        } else {
+          setDetectedAreas([]);
+        }
+      } catch (err) {
+        console.warn('Pincode lookup error:', err);
+      } finally {
+        setIsPincodeLoading(false);
+      }
+    } else {
+      setDetectedAreas([]);
+    }
+  };
+
+  const handleSelectArea = (areaName: string) => {
+    setSelectedArea(areaName);
+    if (!line2.trim()) {
+      setLine2(areaName);
+    } else if (!line2.toLowerCase().includes(areaName.toLowerCase())) {
+      setLine2(`${line2}, ${areaName}`);
+    }
+  };
 
   const loadAddresses = async () => {
     setLoading(true);
@@ -172,12 +219,40 @@ export const AddressesPage: React.FC = () => {
               {/* City / State / Pincode — 3 cols on sm, 1 col on mobile */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="col-span-2 sm:col-span-1 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[0.65rem] font-medium tracking-[0.2em] uppercase text-[#0A0A0A] block">PINCODE *</label>
+                    {isPincodeLoading && (
+                      <span className="text-[0.6rem] text-[#736E65] flex items-center gap-1 font-light">
+                        <Loader2 size={10} className="animate-spin text-[#0A0A0A]" />
+                        <span>Detecting...</span>
+                      </span>
+                    )}
+                    {!isPincodeLoading && pincodeSuccess && (
+                      <span className="text-[0.6rem] text-emerald-700 flex items-center gap-1 font-medium">
+                        <CheckCircle2 size={10} className="text-emerald-700" />
+                        <span>Auto-filled</span>
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    required
+                    value={pincode}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
+                    placeholder="6-digit PIN"
+                    className="w-full bg-[#FAF9F6] border border-[#0A0A0A]/20 px-3.5 py-2.5 text-xs text-[#0A0A0A] focus:outline-none focus:border-[#0A0A0A]"
+                  />
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-[0.65rem] font-medium tracking-[0.2em] uppercase text-[#0A0A0A] block">CITY *</label>
                   <input
                     type="text"
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
+                    placeholder="City"
                     className="w-full bg-[#FAF9F6] border border-[#0A0A0A]/20 px-3.5 py-2.5 text-xs text-[#0A0A0A] focus:outline-none focus:border-[#0A0A0A]"
                   />
                 </div>
@@ -188,21 +263,45 @@ export const AddressesPage: React.FC = () => {
                     required
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    className="w-full bg-[#FAF9F6] border border-[#0A0A0A]/20 px-3.5 py-2.5 text-xs text-[#0A0A0A] focus:outline-none focus:border-[#0A0A0A]"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-[0.65rem] font-medium tracking-[0.2em] uppercase text-[#0A0A0A] block">PINCODE *</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    required
-                    value={pincode}
-                    onChange={(e) => setPincode(e.target.value)}
+                    placeholder="State"
                     className="w-full bg-[#FAF9F6] border border-[#0A0A0A]/20 px-3.5 py-2.5 text-xs text-[#0A0A0A] focus:outline-none focus:border-[#0A0A0A]"
                   />
                 </div>
               </div>
+
+              {/* Detected Area / Locality selector */}
+              {detectedAreas.length > 0 && (
+                <div className="p-3 bg-white border border-[#0A0A0A]/10 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <span className="text-[0.6rem] font-bold tracking-[0.15em] uppercase text-[#0A0A0A] flex items-center gap-1.5">
+                      <MapPin size={11} className="text-[#D45A45]" />
+                      <span>SELECT AREA / LOCALITY FOR {pincode}:</span>
+                    </span>
+                    <span className="text-[0.55rem] text-[#736E65] font-light">
+                      Tap to add to Address Line 2
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                    {detectedAreas.map((area) => {
+                      const isSelected = selectedArea === area || line2.toLowerCase().includes(area.toLowerCase());
+                      return (
+                        <button
+                          key={area}
+                          type="button"
+                          onClick={() => handleSelectArea(area)}
+                          className={`text-[0.65rem] px-2.5 py-1 border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] shadow-xs'
+                              : 'bg-[#FAF9F6] text-[#0A0A0A] border-[#0A0A0A]/15 hover:border-[#0A0A0A] hover:bg-white'
+                          }`}
+                        >
+                          {area}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2 flex flex-col sm:flex-row items-stretch gap-3">
                 <button

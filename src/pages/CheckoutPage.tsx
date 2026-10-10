@@ -6,10 +6,10 @@ import { useStoreSettings } from '../context/StoreSettingsContext';
 import { placeOrderCOD, createRazorpayPendingOrder, PaymentMethodType, ShippingDetails } from '../services/checkoutService';
 import { openRazorpayCheckoutFlow } from '../services/razorpayService';
 import { fetchOrderDetail } from '../services/orderService';
-import { sendOrderConfirmationEmail } from '../services/emailService';
 import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
-import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck } from 'lucide-react';
+import { lookupPincode } from '../services/pincodeService';
+import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck, Loader2, CheckCircle2, MapPin } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
   const { cart, items, subtotal, appliedCoupon, discountAmount, finalTotal, clearCartLocal, refreshCart, loading: cartLoading } = useCart();
@@ -17,7 +17,9 @@ export const CheckoutPage: React.FC = () => {
   const { settings } = useStoreSettings();
   const navigate = useNavigate();
 
-  // Selected Payment Method state (default to Razorpay Test Mode)
+  const isTestMode = (import.meta.env.VITE_RAZORPAY_KEY_ID || '').startsWith('rzp_test_');
+
+  // Selected Payment Method state
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('razorpay');
 
   // Customer & Shipping Form State
@@ -29,6 +31,62 @@ export const CheckoutPage: React.FC = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
+
+  // Auto-fetch Pincode state
+  const [isPincodeLoading, setIsPincodeLoading] = useState(false);
+  const [pincodeSuccess, setPincodeSuccess] = useState(false);
+  const [detectedAreas, setDetectedAreas] = useState<string[]>([]);
+  const [selectedArea, setSelectedArea] = useState<string>('');
+
+  const handlePincodeChange = async (newVal: string) => {
+    const cleaned = newVal.replace(/[^0-9]/g, '').slice(0, 6);
+    setPincode(cleaned);
+    setPincodeSuccess(false);
+
+    if (errors.pincode) {
+      setErrors((p) => ({ ...p, pincode: '' }));
+    }
+
+    if (cleaned.length === 6) {
+      setIsPincodeLoading(true);
+      try {
+        const details = await lookupPincode(cleaned);
+        if (details) {
+          if (details.city) {
+            setCity(details.city);
+            if (errors.city) setErrors((p) => ({ ...p, city: '' }));
+          }
+          if (details.state) {
+            setState(details.state);
+            if (errors.state) setErrors((p) => ({ ...p, state: '' }));
+          }
+          setDetectedAreas(details.areas || []);
+          setPincodeSuccess(true);
+          if (details.areas?.length === 1 && !line2) {
+            setLine2(details.areas[0]);
+            setSelectedArea(details.areas[0]);
+          }
+        } else {
+          setDetectedAreas([]);
+        }
+      } catch (err) {
+        console.warn('Pincode lookup error:', err);
+      } finally {
+        setIsPincodeLoading(false);
+      }
+    } else {
+      setDetectedAreas([]);
+    }
+  };
+
+  const handleSelectArea = (areaName: string) => {
+    setSelectedArea(areaName);
+    if (!line2.trim()) {
+      setLine2(areaName);
+    } else if (!line2.toLowerCase().includes(areaName.toLowerCase())) {
+      setLine2(`${line2}, ${areaName}`);
+    }
+  };
 
   // Inline Validation & Error States
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -155,7 +213,7 @@ export const CheckoutPage: React.FC = () => {
               createdOrder.payment_status = 'paid';
               createdOrder.status = 'processing';
               createdOrder.razorpay_payment_id = paymentId;
-              void sendOrderConfirmationEmail(createdOrder.id, shippingData.email);
+              // Note: Confirmation email and Shiprocket shipment are already triggered authoritatively server-side by _payment-finalizer.ts
               clearCartLocal();
               void refreshCart();
               setCompletedOrder(createdOrder);
@@ -337,6 +395,33 @@ export const CheckoutPage: React.FC = () => {
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
                 <div className="col-span-2 md:col-span-1 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[0.65rem] font-medium tracking-[0.2em] uppercase text-[#0A0A0A] block">PINCODE *</label>
+                    {isPincodeLoading && (
+                      <span className="text-[0.6rem] text-[#736E65] flex items-center gap-1 font-light">
+                        <Loader2 size={10} className="animate-spin text-[#0A0A0A]" />
+                        <span>Detecting...</span>
+                      </span>
+                    )}
+                    {!isPincodeLoading && pincodeSuccess && (
+                      <span className="text-[0.6rem] text-emerald-700 flex items-center gap-1 font-medium">
+                        <CheckCircle2 size={10} className="text-emerald-700" />
+                        <span>Auto-filled</span>
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={pincode}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
+                    placeholder="6-digit PIN"
+                    className={`w-full bg-transparent border px-4 py-3 text-xs tracking-wider focus:outline-none ${errors.pincode ? 'border-red-600' : 'border-[#0A0A0A]/20 focus:border-[#0A0A0A]'}`}
+                  />
+                  {errors.pincode && <p className="text-[0.65rem] text-red-600 font-medium">{errors.pincode}</p>}
+                </div>
+                <div className="space-y-1.5">
                   <label className="text-[0.65rem] font-medium tracking-[0.2em] uppercase text-[#0A0A0A] block">CITY *</label>
                   <input
                     type="text"
@@ -358,19 +443,41 @@ export const CheckoutPage: React.FC = () => {
                   />
                   {errors.state && <p className="text-[0.65rem] text-red-600 font-medium">{errors.state}</p>}
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-[0.65rem] font-medium tracking-[0.2em] uppercase text-[#0A0A0A] block">PINCODE *</label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={pincode}
-                    onChange={(e) => { setPincode(e.target.value); if (errors.pincode) setErrors((p) => ({ ...p, pincode: '' })); }}
-                    placeholder="6-digit"
-                    className={`w-full bg-transparent border px-4 py-3 text-xs tracking-wider focus:outline-none ${errors.pincode ? 'border-red-600' : 'border-[#0A0A0A]/20 focus:border-[#0A0A0A]'}`}
-                  />
-                  {errors.pincode && <p className="text-[0.65rem] text-red-600 font-medium">{errors.pincode}</p>}
-                </div>
               </div>
+
+              {/* Detected Area / Locality selector */}
+              {detectedAreas.length > 0 && (
+                <div className="pt-1 p-3 bg-white border border-[#0A0A0A]/10 space-y-2">
+                  <div className="flex items-center justify-between flex-wrap gap-1">
+                    <span className="text-[0.6rem] font-bold tracking-[0.15em] uppercase text-[#0A0A0A] flex items-center gap-1.5">
+                      <MapPin size={11} className="text-[#D45A45]" />
+                      <span>SELECT AREA / LOCALITY FOR {pincode}:</span>
+                    </span>
+                    <span className="text-[0.55rem] text-[#736E65] font-light">
+                      Tap to add to Address Line 2
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                    {detectedAreas.map((area) => {
+                      const isSelected = selectedArea === area || line2.toLowerCase().includes(area.toLowerCase());
+                      return (
+                        <button
+                          key={area}
+                          type="button"
+                          onClick={() => handleSelectArea(area)}
+                          className={`text-[0.65rem] px-2.5 py-1 border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#0A0A0A] text-white border-[#0A0A0A] shadow-xs'
+                              : 'bg-[#FAF9F6] text-[#0A0A0A] border-[#0A0A0A]/15 hover:border-[#0A0A0A] hover:bg-white'
+                          }`}
+                        >
+                          {area}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 3. PAYMENT METHOD */}
@@ -402,12 +509,20 @@ export const CheckoutPage: React.FC = () => {
                         <CreditCard size={14} className="text-[#0A0A0A]" />
                         <span>ONLINE PAYMENT (RAZORPAY)</span>
                       </span>
-                      <span className="text-[0.55rem] font-bold tracking-widest text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 uppercase">
-                        TEST MODE ENABLED
-                      </span>
+                      {isTestMode ? (
+                        <span className="text-[0.55rem] font-bold tracking-widest text-amber-900 bg-amber-100 border border-amber-300 px-2 py-0.5 uppercase">
+                          TEST MODE ENABLED
+                        </span>
+                      ) : (
+                        <span className="text-[0.55rem] font-bold tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-300 px-2 py-0.5 uppercase">
+                          100% SECURE
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-[#736E65] font-light leading-relaxed">
-                      Instant payment via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, NetBanking, or Wallets in Razorpay Test Mode.
+                      {isTestMode
+                        ? 'Instant payment via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, NetBanking, or Wallets in Razorpay Test Mode.'
+                        : 'Instant payment via UPI (Google Pay, PhonePe, Paytm), Credit / Debit Cards, NetBanking, or Wallets.'}
                     </p>
                     <div className="flex flex-wrap gap-2 pt-1 text-[0.6rem] font-medium tracking-wider text-[#736E65] uppercase">
                       <span className="bg-[#FAF9F6] border border-[#0A0A0A]/10 px-2 py-0.5">UPI</span>
@@ -494,7 +609,7 @@ export const CheckoutPage: React.FC = () => {
                   <img
                     src={item.image_url}
                     alt={item.product_name}
-                    className="w-12 h-16 object-cover bg-[#F0EFEA] hairline-all flex-shrink-0"
+                    className="w-12 h-16 object-cover object-top bg-[#F0EFEA] hairline-all flex-shrink-0"
                   />
                   <div className="space-y-0.5 text-xs flex-1 min-w-0">
                     <h4 className="font-editorial text-sm text-[#0A0A0A] line-clamp-1">{item.product_name}</h4>

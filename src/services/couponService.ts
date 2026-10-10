@@ -8,66 +8,36 @@ export interface CouponValidationResult {
   message: string;
 }
 
-// Default fallback coupons in case database table is empty or loading
-const MOCK_FALLBACK_COUPONS: Coupon[] = [
-  {
-    id: 'mock-1',
-    code: 'WELCOME10',
-    discount_type: 'percentage',
-    discount_value: 10,
-    minimum_order_value: 1499,
-    maximum_discount: 500,
-    usage_limit: 1000,
-    per_user_limit: 1,
-    starts_at: new Date(Date.now() - 86400000).toISOString(),
-    expires_at: new Date(Date.now() + 30 * 86400000).toISOString(),
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-  {
-    id: 'mock-2',
-    code: 'FLINT500',
-    discount_type: 'fixed',
-    discount_value: 500,
-    minimum_order_value: 2999,
-    maximum_discount: 500,
-    usage_limit: 500,
-    per_user_limit: 1,
-    starts_at: new Date(Date.now() - 86400000).toISOString(),
-    expires_at: new Date(Date.now() + 60 * 86400000).toISOString(),
-    is_active: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  },
-];
-
 // Fetch all active, valid coupons from Supabase public.coupons table
 export async function fetchActiveCoupons(): Promise<Coupon[]> {
   try {
-    const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('coupons')
       .select('*')
       .eq('is_active', true)
-      .lte('starts_at', nowIso)
       .order('created_at', { ascending: false });
 
-    if (error || !data || data.length === 0) {
-      console.warn('Using active fallback coupons:', error?.message || 'No DB coupons found');
-      return MOCK_FALLBACK_COUPONS;
+    if (error) {
+      console.warn('Error fetching active coupons from database:', error.message);
+      return [];
     }
 
-    // Filter unexpired coupons client-side
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    // Filter unexpired and active coupons client-side
+    const now = new Date();
     const validCoupons = data.filter((c: Coupon) => {
-      if (!c.expires_at) return true;
-      return new Date(c.expires_at) > new Date();
+      if (c.starts_at && new Date(c.starts_at) > now) return false;
+      if (c.expires_at && new Date(c.expires_at) < now) return false;
+      return true;
     });
 
-    return validCoupons.length > 0 ? validCoupons : MOCK_FALLBACK_COUPONS;
+    return validCoupons;
   } catch (err) {
     console.error('Error fetching active coupons:', err);
-    return MOCK_FALLBACK_COUPONS;
+    return [];
   }
 }
 
