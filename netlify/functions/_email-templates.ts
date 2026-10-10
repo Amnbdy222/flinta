@@ -25,6 +25,7 @@ export interface OrderEmailData {
   shippingAmount: number;
   totalAmount: number;
   paymentMethod: string;
+  paymentStatus?: string;
   shippingAddress: {
     name: string;
     phone: string;
@@ -37,6 +38,8 @@ export interface OrderEmailData {
   orderDate: string;
   cancellationReason?: string;
   cancellationDate?: string;
+  refundAmount?: number;
+  refundStatus?: string;
 }
 
 // ─── Shared Layout ────────────────────────────────────────────────
@@ -311,9 +314,13 @@ export function buildOrderCancellationEmail(data: OrderEmailData): { subject: st
             <td style="padding:16px 20px;">
               <p style="margin:0;font-size:10px;letter-spacing:2px;color:#92400e;text-transform:uppercase;font-weight:600;">REFUND INFORMATION</p>
               <p style="margin:6px 0 0;font-size:12px;color:#78350f;line-height:1.6;">
-                ${data.paymentMethod === 'cod'
-                  ? 'This order was placed via Cash on Delivery (COD). No payment was collected, so no refund is required.'
-                  : 'Your refund of ' + formatCurrency(data.totalAmount) + ' will be processed within 5–7 business days to your original payment method.'}
+                ${
+                  data.refundStatus === 'processed' || data.paymentStatus === 'paid' || (data.refundAmount && data.refundAmount > 0)
+                    ? 'Your refund of ' + formatCurrency(data.refundAmount || data.totalAmount) + ' will be processed within 5–7 business days to your original payment method.'
+                    : data.paymentMethod === 'cod'
+                    ? 'This order was placed via Cash on Delivery (COD). No payment was collected, so no refund is required.'
+                    : 'No payment was collected for this order. No refund is required.'
+                }
               </p>
             </td>
           </tr>

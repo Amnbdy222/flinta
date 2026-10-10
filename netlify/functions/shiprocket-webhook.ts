@@ -16,8 +16,34 @@ export const handler: Handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
+  // Support preflight / OPTIONS requests
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: JSON.stringify({ ok: true }) };
+  }
+
+  // Support GET / HEAD health-checks
+  if (event.httpMethod === 'GET' || event.httpMethod === 'HEAD') {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({ status: 'healthy', message: 'Webhook live' }),
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return { statusCode: 200, headers, body: JSON.stringify({ message: 'Accepted' }) };
+  }
+
+  // Verify webhook secret token if configured
+  const incomingToken =
+    event.headers['x-api-key'] ||
+    event.headers['x-shiprocket-token'] ||
+    event.headers['authorization'];
+  const configuredSecret = process.env.SHIPROCKET_WEBHOOK_SECRET || process.env.SHIPROCKET_WEBHOOK_TOKEN;
+
+  if (configuredSecret && incomingToken !== configuredSecret && incomingToken !== `Bearer ${configuredSecret}`) {
+    console.warn('[ShiprocketWebhook] Unauthorized webhook invocation attempt.');
+    return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized webhook request' }) };
   }
 
   try {
@@ -30,7 +56,7 @@ export const handler: Handler = async (event) => {
     const courierName = payload.courier_name;
 
     if (!awb && !orderId) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing AWB or order_id.' }) };
+      return { statusCode: 200, headers, body: JSON.stringify({ success: true, message: 'Test ping acknowledged' }) };
     }
 
     const dbClient = SUPABASE_SERVICE_ROLE_KEY
@@ -38,7 +64,7 @@ export const handler: Handler = async (event) => {
       : createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Find order by awb_code or order_number or shiprocket_order_id
-    let query = dbClient.from('orders').select('id, status, shipment_status');
+    let query = dbClient.from('orders').select('id, status, shipment_status, payment_method, payment_status');
     if (awb) {
       query = query.eq('awb_code', awb);
     } else if (orderId) {
@@ -70,6 +96,11 @@ export const handler: Handler = async (event) => {
 
     if (newStatus && targetOrder.status !== 'delivered') {
       updateData.status = newStatus;
+    }
+
+    // When a COD order is DELIVERED, customer paid cash -> mark payment_status = 'paid'
+    if (newStatus === 'delivered' && targetOrder.payment_method === 'cod') {
+      updateData.payment_status = 'paid';
     }
 
     if (courierName) {

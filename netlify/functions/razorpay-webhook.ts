@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { createClient } from '@supabase/supabase-js';
 import { finalizeRazorpayPaymentServer } from './_payment-finalizer';
@@ -8,13 +8,11 @@ import { finalizeRazorpayPaymentServer } from './_payment-finalizer';
  * Netlify Function: razorpay-webhook
  *
  * Receives Razorpay webhook events. Security architecture:
- *   1. Verify x-razorpay-signature using RAZORPAY_WEBHOOK_SECRET (dedicated secret)
+ *   1. Verify x-razorpay-signature using RAZORPAY_WEBHOOK_SECRET
  *   2. Check webhook event idempotency (razorpay_webhook_events table, UNIQUE event_id)
  *   3. Only process relevant events (payment.captured, order.paid)
  *   4. Verify Razorpay payment amount/currency against database order
  *   5. Call shared idempotent payment finalizer (same as verify-razorpay-payment)
- *
- * SECRETS: RAZORPAY_WEBHOOK_SECRET is ONLY in env vars. No RAZORPAY_KEY_SECRET fallback.
  */
 
 export const handler: Handler = async (event) => {
@@ -26,10 +24,20 @@ export const handler: Handler = async (event) => {
 
   // ── Strict env var checks ──
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://klzwqmphtyvwubfqhgbf.supabase.co';
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsendxbXBodHl2d3ViZnFoZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjU5NzcsImV4cCI6MjEwMzE0MTk3N30.NsZpViSPATovps_ON_wSIt0sS5ludqAL9rxovdgYfug';
-  const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || 'xEnF6f89t9eGd6PYgN0RilBM';
-  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TjKvAUVtmcfouT';
-  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'xEnF6f89t9eGd6PYgN0RilBM';
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || process.env.RAZORPAY_KEY_SECRET;
+  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
+  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.VITE_RAZORPAY_KEY_SECRET;
+
+  if (!RAZORPAY_WEBHOOK_SECRET) {
+    console.error('[razorpay-webhook] RAZORPAY_WEBHOOK_SECRET not configured.');
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Webhook configuration error' }) };
+  }
+
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('[razorpay-webhook] SUPABASE_SERVICE_ROLE_KEY not configured.');
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Database service role key missing' }) };
+  }
 
   // ── 1. Verify x-razorpay-signature ──
   const signature = event.headers['x-razorpay-signature'] || event.headers['X-Razorpay-Signature'];
@@ -131,7 +139,7 @@ export const handler: Handler = async (event) => {
     if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET && rzpPaymentId) {
       try {
         const rzpInstance = new Razorpay({ key_id: RAZORPAY_KEY_ID, key_secret: RAZORPAY_KEY_SECRET });
-        const rzpPayment = await rzpInstance.payments.fetch(rzpPaymentId) as Record<string, unknown>;
+        const rzpPayment = (await rzpInstance.payments.fetch(rzpPaymentId)) as unknown as Record<string, unknown>;
 
         const dbAmountPaise = Math.round(Number(order.total_amount) * 100);
         const rzpAmount = Number(rzpPayment.amount) || 0;
@@ -163,11 +171,13 @@ export const handler: Handler = async (event) => {
     }
 
     // ── 7. Call shared idempotent payment finalizer ──
+    const customerEmail = (paymentEntity?.email as string) || (order.shipping_email as string) || undefined;
     const result = await finalizeRazorpayPaymentServer(
       dbClient,
       order.id,
       rzpPaymentId || '',
-      rzpOrderId || order.razorpay_order_id || ''
+      rzpOrderId || order.razorpay_order_id || '',
+      customerEmail
     );
 
     if (!result.success) {

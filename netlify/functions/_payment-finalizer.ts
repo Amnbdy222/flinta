@@ -167,11 +167,12 @@ export async function finalizeRazorpayPaymentServer(
       }
     }
 
-    // Trigger Shiprocket shipment creation (non-blocking for payment)
+    // Trigger Shiprocket shipment creation (awaited to prevent serverless function termination)
     if (process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
       try {
         const { processShiprocketOrderForOrder } = await import('./_shiprocket-client');
-        void processShiprocketOrderForOrder(dbClient, orderId);
+        await processShiprocketOrderForOrder(dbClient, orderId, userEmail);
+        console.log(`[PaymentFinalizer] Shiprocket order created successfully for ${orderId} (JS fallback).`);
       } catch (shipErr) {
         console.warn('[PaymentFinalizer] Shiprocket fallback trigger warning:', shipErr);
       }
@@ -199,13 +200,14 @@ export async function finalizeRazorpayPaymentServer(
     }
   }
 
-  // Trigger Shiprocket shipment creation (non-blocking for payment)
+  // Trigger Shiprocket shipment creation (awaited to prevent serverless function termination)
   if (process.env.SHIPROCKET_EMAIL && process.env.SHIPROCKET_PASSWORD) {
     try {
       const { processShiprocketOrderForOrder } = await import('./_shiprocket-client');
-      void processShiprocketOrderForOrder(dbClient, orderId);
+      await processShiprocketOrderForOrder(dbClient, orderId, userEmail);
+      console.log(`[PaymentFinalizer] Shiprocket order created successfully for ${orderId}.`);
     } catch (shipErr) {
-      console.warn('[PaymentFinalizer] Shiprocket background trigger warning (non-blocking):', shipErr);
+      console.warn('[PaymentFinalizer] Shiprocket trigger warning (non-blocking):', shipErr);
     }
   }
 

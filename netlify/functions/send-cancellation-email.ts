@@ -86,6 +86,15 @@ export const handler: Handler = async (event) => {
       return { statusCode: 403, headers, body: JSON.stringify({ error: 'Unauthorized to access this order' }) };
     }
 
+    // If an online order was never paid, no cancellation or refund email should be sent
+    if (order.payment_method === 'razorpay' && order.payment_status !== 'paid') {
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, message: 'Unpaid order cancelled; no email needed.' }),
+      };
+    }
+
     // 3. Map Database Record to OrderEmailData (100% database authoritative)
     const items: OrderItemEmailData[] = (order.order_items || []).map((item: Record<string, unknown>) => ({
       name: String(item.product_name_snapshot || 'FLINT Garment'),
@@ -106,6 +115,9 @@ export const handler: Handler = async (event) => {
       shippingAmount: Number(order.shipping_amount) || 0,
       totalAmount: Number(order.total_amount) || 0,
       paymentMethod: String(order.payment_method || 'cod'),
+      paymentStatus: String(order.payment_status || 'pending'),
+      refundStatus: String(order.refund_status || ''),
+      refundAmount: Number(order.refund_amount || 0),
       shippingAddress: {
         name: String(order.shipping_name || ''),
         phone: String(order.shipping_phone || ''),

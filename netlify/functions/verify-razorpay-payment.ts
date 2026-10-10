@@ -1,5 +1,5 @@
 import type { Handler } from '@netlify/functions';
-import crypto from 'crypto';
+import * as crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { createClient } from '@supabase/supabase-js';
 import { finalizeRazorpayPaymentServer } from './_payment-finalizer';
@@ -40,8 +40,17 @@ export const handler: Handler = async (event) => {
   const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://klzwqmphtyvwubfqhgbf.supabase.co';
   const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsendxbXBodHl2d3ViZnFoZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjU5NzcsImV4cCI6MjEwMzE0MTk3N30.NsZpViSPATovps_ON_wSIt0sS5ludqAL9rxovdgYfug';
   const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_TjKvAUVtmcfouT';
-  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.VITE_RAZORPAY_KEY_SECRET || 'xEnF6f89t9eGd6PYgN0RilBM';
+  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
+  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.VITE_RAZORPAY_KEY_SECRET;
+
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+    console.error('[verify-razorpay-payment] Razorpay credentials not configured in environment.');
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Payment gateway configuration error. Please contact store support.' }),
+    };
+  }
 
   try {
     const body = JSON.parse(event.body || '{}');
@@ -136,7 +145,7 @@ export const handler: Handler = async (event) => {
 
     let rzpPayment: Record<string, unknown>;
     try {
-      rzpPayment = await rzpInstance.payments.fetch(razorpay_payment_id) as Record<string, unknown>;
+      rzpPayment = (await rzpInstance.payments.fetch(razorpay_payment_id)) as unknown as Record<string, unknown>;
     } catch (fetchErr) {
       console.error('[verify-razorpay-payment] Failed to fetch Razorpay payment:', fetchErr);
       return { statusCode: 400, headers, body: JSON.stringify({ error: 'Unable to verify payment with Razorpay.' }) };

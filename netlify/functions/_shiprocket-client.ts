@@ -87,7 +87,8 @@ function formatShiprocketDate(dateStr?: string): string {
  */
 export async function createShiprocketOrder(
   order: Record<string, any>,
-  orderItems: Record<string, any>[]
+  orderItems: Record<string, any>[],
+  customerEmail?: string
 ): Promise<ShiprocketOrderResult> {
   const token = await getShiprocketToken();
   const pickupLocation = process.env.SHIPROCKET_PICKUP_LOCATION || 'warehouse-1';
@@ -134,7 +135,7 @@ export async function createShiprocketOrder(
     billing_pincode: String(order.shipping_pincode || '110001'),
     billing_state: String(order.shipping_state || 'Delhi'),
     billing_country: 'India',
-    billing_email: String(order.shipping_email || 'orders@flintaindia.com'),
+    billing_email: String(customerEmail || order.shipping_email || 'orders@flintaindia.com'),
     billing_phone: String(order.shipping_phone || '9999999999').replace(/[^0-9]/g, '').slice(-10),
     shipping_is_billing: true,
     order_items: items,
@@ -226,7 +227,8 @@ export async function trackShipmentByAWB(awbCode: string): Promise<any> {
  */
 export async function processShiprocketOrderForOrder(
   dbClient: SupabaseClient,
-  orderId: string
+  orderId: string,
+  overrideEmail?: string
 ): Promise<void> {
   if (!process.env.SHIPROCKET_EMAIL || !process.env.SHIPROCKET_PASSWORD) {
     console.log('[Shiprocket] Credentials not configured. Skipping automated shipping.');
@@ -252,8 +254,19 @@ export async function processShiprocketOrderForOrder(
       return;
     }
 
+    // Resolve customer email address
+    let customerEmail = overrideEmail || order.shipping_email;
+    if (!customerEmail && order.user_id) {
+      try {
+        const { data: { user } } = await dbClient.auth.admin.getUserById(order.user_id);
+        customerEmail = user?.email;
+      } catch (uErr: any) {
+        console.warn('[Shiprocket] Note: could not resolve user email from auth:', uErr?.message);
+      }
+    }
+
     // 3. Create order in Shiprocket
-    const srResult = await createShiprocketOrder(order, order.order_items || []);
+    const srResult = await createShiprocketOrder(order, order.order_items || [], customerEmail);
 
     const srOrderId = String(srResult.order_id);
     const srShipmentId = String(srResult.shipment_id || '');
