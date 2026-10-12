@@ -34,15 +34,16 @@ export const PromoBar: React.FC = () => {
     <div className="relative w-full overflow-hidden group border-y border-[#0A0A0A]/10 bg-[#FAF9F6] my-4 sm:my-8">
       {hasImage && promoBanner ? (
         /* VISUAL ANNOUNCEMENT BANNER WITH UPLOADED IMAGE */
-        <div className="relative w-full h-36 xs:h-44 sm:h-56 md:h-64 lg:h-72 bg-[#FAF9F6] flex items-center justify-center overflow-hidden">
-          <picture className="w-full h-full block">
+        <div className="relative w-full bg-[#FAF9F6] flex items-center justify-center overflow-hidden">
+          <picture className="w-full block">
             {promoBanner.mobile_image_url && (
               <source media="(max-width: 767px)" srcSet={promoBanner.mobile_image_url} />
             )}
             <img
               src={promoBanner.image_url}
               alt={promoBanner.title || 'Maison Announcement'}
-              className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.015]"
+              loading="lazy"
+              className="w-full h-auto block object-contain transition-transform duration-700 ease-out md:group-hover:scale-[1.01]"
             />
           </picture>
 

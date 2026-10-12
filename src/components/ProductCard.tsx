@@ -98,7 +98,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               src={currentDisplayImage}
               alt={product.name}
               loading="lazy"
-              className="w-full h-full object-cover object-top transition-transform duration-700 ease-out md:group-hover:scale-105"
+              className="w-full h-full object-cover object-top origin-top transition-transform duration-700 ease-out md:group-hover:scale-105"
             />
           </Link>
 
