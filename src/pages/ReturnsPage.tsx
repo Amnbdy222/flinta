@@ -1,11 +1,17 @@
 import React from 'react';
 import { useStoreSettings } from '../context/StoreSettingsContext';
+import { SEO } from '../components/SEO';
 
 export const ReturnsPage: React.FC = () => {
   const { settings } = useStoreSettings();
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-32 pb-24 text-[#0A0A0A]">
+      <SEO
+        title="Returns & Exchanges Policy"
+        description={`Learn about ${settings.store_name} ${settings.return_policy_days}-day returns, exchanges, and refund guidelines.`}
+        canonicalUrl="https://flintaindia.com/returns"
+      />
       <div className="container-editorial max-w-3xl mx-auto space-y-12">
         <div className="text-center space-y-4 pb-12 hairline-b">
           <span className="editorial-subtitle block">CLIENT GUARANTEE</span>

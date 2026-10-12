@@ -1,8 +1,14 @@
 import React from 'react';
+import { SEO } from '../components/SEO';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-32 pb-24 text-[#0A0A0A]">
+      <SEO
+        title="About Our Maison"
+        description="Learn about FLINT — High fashion editorial storefront, minimalist organic textiles, precision tailoring, and timeless garment archives."
+        canonicalUrl="https://flintaindia.com/about"
+      />
       <div className="container-editorial max-w-4xl mx-auto space-y-16">
         {/* HEADER */}
         <div className="text-center space-y-4 pb-12 hairline-b">

@@ -1,8 +1,14 @@
 import React from 'react';
+import { SEO } from '../components/SEO';
 
 export const TermsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-32 pb-24 text-[#0A0A0A]">
+      <SEO
+        title="Terms & Conditions"
+        description="Review the terms and conditions for orders, services, and transactions at FLINT."
+        canonicalUrl="https://flintaindia.com/terms"
+      />
       <div className="container-editorial max-w-3xl mx-auto space-y-12">
         <div className="text-center space-y-4 pb-12 hairline-b">
           <span className="editorial-subtitle block">TERMS OF SERVICE</span>

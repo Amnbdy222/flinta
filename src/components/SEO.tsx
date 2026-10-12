@@ -1,11 +1,17 @@
 import React, { useEffect } from 'react';
 
+export interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
 export interface SEOProps {
   title?: string;
   description?: string;
   image?: string;
   type?: 'website' | 'product';
   canonicalUrl?: string;
+  breadcrumbs?: BreadcrumbItem[];
   productData?: {
     name: string;
     description?: string | null;
@@ -25,18 +31,21 @@ export const SEO: React.FC<SEOProps> = ({
   image,
   type = 'website',
   canonicalUrl,
+  breadcrumbs,
   productData,
 }) => {
-  const siteName = 'FLINT A | High Fashion Maison';
+  const siteName = 'FLINT | High Fashion Maison';
   const defaultDescription =
-    'FLINT A — High fashion editorial storefront. Minimalist organic textiles, precision tailoring, and timeless garment archives.';
+    'FLINT — High fashion editorial storefront. Minimalist organic textiles, precision tailoring, and timeless garment archives.';
   const defaultImage =
     'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop';
+  const defaultBaseUrl = 'https://flintaindia.com';
 
   const pageTitle = title ? `${title} — ${siteName}` : siteName;
   const pageDescription = description || productData?.description || defaultDescription;
   const pageImage = image || productData?.image || defaultImage;
-  const currentUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : 'https://flintstore.com');
+  const currentUrl =
+    canonicalUrl || (typeof window !== 'undefined' ? window.location.href : defaultBaseUrl);
 
   useEffect(() => {
     // 1. Update Document Title
@@ -85,6 +94,17 @@ export const SEO: React.FC<SEOProps> = ({
     updateMetaTag('og:type', type, true);
     updateMetaTag('og:url', currentUrl, true);
 
+    // E-Commerce specific OpenGraph Product tags
+    if (productData) {
+      updateMetaTag('product:price:amount', String(productData.price), true);
+      updateMetaTag('product:price:currency', productData.currency || 'INR', true);
+      updateMetaTag(
+        'product:availability',
+        productData.inStock ? 'in stock' : 'out of stock',
+        true
+      );
+    }
+
     // 4. Twitter Card Meta Tags
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', pageTitle);
@@ -102,12 +122,38 @@ export const SEO: React.FC<SEOProps> = ({
         '@context': 'https://schema.org',
         '@type': 'Organization',
         name: 'FLINT Maison',
-        url: typeof window !== 'undefined' ? window.location.origin : 'https://flintstore.com',
+        url: typeof window !== 'undefined' ? window.location.origin : defaultBaseUrl,
         logo: pageImage,
-        sameAs: ['https://instagram.com', 'https://pinterest.com'],
+        sameAs: ['https://instagram.com/flintaindia'],
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: 'FLINT Maison',
+        url: typeof window !== 'undefined' ? window.location.origin : defaultBaseUrl,
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${defaultBaseUrl}/shop?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
       },
     ];
 
+    // BreadcrumbList Structured Data
+    if (breadcrumbs && breadcrumbs.length > 0) {
+      jsonLdData.push({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbs.map((crumb, idx) => ({
+          '@type': 'ListItem',
+          position: idx + 1,
+          name: crumb.name,
+          item: crumb.url.startsWith('http') ? crumb.url : `${defaultBaseUrl}${crumb.url}`,
+        })),
+      });
+    }
+
+    // Product Schema.org Microdata
     if (productData) {
       const productSchema: Record<string, unknown> = {
         '@context': 'https://schema.org',
@@ -156,7 +202,7 @@ export const SEO: React.FC<SEOProps> = ({
         scriptToRemove.remove();
       }
     };
-  }, [pageTitle, pageDescription, pageImage, type, currentUrl, productData]);
+  }, [pageTitle, pageDescription, pageImage, type, currentUrl, productData, breadcrumbs]);
 
   return null;
 };

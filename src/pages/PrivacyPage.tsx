@@ -1,8 +1,14 @@
 import React from 'react';
+import { SEO } from '../components/SEO';
 
 export const PrivacyPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-32 pb-24 text-[#0A0A0A]">
+      <SEO
+        title="Privacy Policy"
+        description="Review the FLINT privacy policy, data protection, and secure transaction handling standards."
+        canonicalUrl="https://flintaindia.com/privacy"
+      />
       <div className="container-editorial max-w-3xl mx-auto space-y-12">
         <div className="text-center space-y-4 pb-12 hairline-b">
           <span className="editorial-subtitle block">LEGAL PROTOCOL</span>

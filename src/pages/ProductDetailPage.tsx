@@ -294,6 +294,12 @@ export const ProductDetailPage: React.FC = () => {
         description={product.description || product.short_description || undefined}
         image={galleryImages[0] || product.primaryImage}
         type="product"
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Catalogue', url: '/shop' },
+          { name: product.category, url: `/shop?category=${encodeURIComponent(product.category)}` },
+          { name: product.name, url: `/products/${product.slug}` },
+        ]}
         productData={{
           name: product.name,
           description: product.description || product.short_description,

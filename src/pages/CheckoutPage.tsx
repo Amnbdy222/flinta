@@ -9,6 +9,7 @@ import { fetchOrderDetail } from '../services/orderService';
 import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { lookupPincode } from '../services/pincodeService';
+import { SEO } from '../components/SEO';
 import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck, Loader2, CheckCircle2, MapPin } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
@@ -289,6 +290,11 @@ export const CheckoutPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-20 sm:pt-24 md:pt-28 pb-16 md:pb-24 text-[#0A0A0A]">
+      <SEO
+        title="Secure Checkout"
+        description="Complete your order securely with encrypted checkout and express delivery."
+        canonicalUrl="https://flintaindia.com/checkout"
+      />
       <div className="container-editorial">
         {/* CHECKOUT HEADER */}
         <div className="pb-6 sm:pb-8 flex items-center justify-between hairline-b">

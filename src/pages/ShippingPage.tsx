@@ -1,11 +1,17 @@
 import React from 'react';
 import { useStoreSettings } from '../context/StoreSettingsContext';
+import { SEO } from '../components/SEO';
 
 export const ShippingPage: React.FC = () => {
   const { settings } = useStoreSettings();
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-32 pb-24 text-[#0A0A0A]">
+      <SEO
+        title="Shipping & Delivery Policy"
+        description={`Learn about ${settings.store_name} shipping rates, delivery timelines, and complimentary dispatch.`}
+        canonicalUrl="https://flintaindia.com/shipping"
+      />
       <div className="container-editorial max-w-3xl mx-auto space-y-12">
         <div className="text-center space-y-4 pb-12 hairline-b">
           <span className="editorial-subtitle block">LOGISTICS POLICY</span>
