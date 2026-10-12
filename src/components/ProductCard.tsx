@@ -21,7 +21,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const [quickViewOpen, setQuickViewOpen] = useState(false);
   const { isWishlisted, toggleWishlist } = useWishlist();
 
-  const wishlisted = isWishlisted(product.id);
+  const targetId = product.parentProductId || product.id;
+  const wishlisted = isWishlisted(targetId);
 
   // Aspect ratio class selection (aspect-[3/4] preserves full model silhouette and headroom)
   const aspectClass =
@@ -60,7 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleWishlist(product.id);
+    toggleWishlist(targetId);
   };
 
   const handleQuickViewClick = (e: React.MouseEvent) => {
@@ -75,6 +76,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setSelectedColorIndex(idx);
   };
 
+  const productUrl = `/product/${product.slug}${
+    selectedColor ? `?color=${encodeURIComponent(selectedColor.color_name)}` : ''
+  }`;
+
   return (
     <>
       <div
@@ -85,7 +90,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* IMAGE CONTAINER */}
         <div className={`relative overflow-hidden bg-[#F0EFEA] ${aspectClass} w-full hairline-all transition-all duration-500`}>
           <Link
-            to={`/product/${product.slug}`}
+            to={productUrl}
             className="block w-full h-full"
             aria-label={`View details for ${product.name}`}
           >
@@ -152,7 +157,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="flex flex-col space-y-1 sm:space-y-1.5 pt-1">
           <div className="flex items-start justify-between gap-2">
             <Link
-              to={`/product/${product.slug}`}
+              to={productUrl}
               className="font-editorial text-sm sm:text-base md:text-lg font-normal text-[#0A0A0A] hover:opacity-75 transition-opacity line-clamp-1 leading-snug"
             >
               {product.name}
@@ -164,7 +169,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
           {/* CATEGORY / FABRIC */}
           <p className="text-[0.6rem] sm:text-[0.65rem] tracking-[0.2em] text-[#736E65] uppercase line-clamp-1">
-            {product.fabric || product.category || 'COTTON LINEN ARCHIVE'}
+            {selectedColor ? `${selectedColor.color_name} • ` : ''}{product.fabric || product.category || 'COTTON LINEN ARCHIVE'}
           </p>
 
           {/* COLOR SWATCHES */}

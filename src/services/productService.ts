@@ -88,6 +88,78 @@ export function formatProduct(raw: Product, index: number = 0): FormattedProduct
   };
 }
 
+/**
+ * Expands products with multiple color variants into individual single-variant product cards.
+ * Each card represents one specific color variant with its own primary image,
+ * specific price/compare price, and explicit color name on the UI label.
+ */
+export function expandProductsByColor(products: FormattedProduct[]): FormattedProduct[] {
+  const result: FormattedProduct[] = [];
+
+  for (const product of products) {
+    if (!product.colors || product.colors.length <= 1) {
+      result.push(product);
+      continue;
+    }
+
+    product.colors.forEach((col, colIdx) => {
+      // Find variants matching this specific color
+      const matchingVariants = product.variants.filter(
+        (v) => v.color_name?.toLowerCase() === col.color_name.toLowerCase()
+      );
+      const variantIds = new Set(matchingVariants.map((v) => v.id));
+
+      // Find images linked to these variants
+      const matchingImages = product.images.filter(
+        (img) => img.variant_id && variantIds.has(img.variant_id)
+      );
+
+      // Dedicated primary image for this color variant
+      const primaryForColor =
+        matchingImages.find((img) => img.is_primary)?.public_url ||
+        matchingImages[0]?.public_url ||
+        product.images[colIdx]?.public_url ||
+        product.primaryImage;
+
+      // Put this variant's images first
+      const orderedImages = matchingImages.length > 0
+        ? [...matchingImages, ...product.images.filter((img) => !matchingImages.includes(img))]
+        : product.images;
+
+      // Price and compare price for this color variant
+      const validPrices = matchingVariants.map((v) => Number(v.price) || 0).filter((p) => p > 0);
+      const variantPrice = validPrices.length > 0 ? Math.min(...validPrices) : product.price;
+
+      const firstWithCompare = matchingVariants.find((v) => v.compare_at_price);
+      const variantComparePrice = firstWithCompare?.compare_at_price
+        ? Number(firstWithCompare.compare_at_price)
+        : product.compareAtPrice;
+
+      // Reorder colors so this variant's color is first (selected by default on this card)
+      const reorderedColors = [
+        col,
+        ...product.colors.filter((c) => c.color_name.toLowerCase() !== col.color_name.toLowerCase()),
+      ];
+
+      result.push({
+        ...product,
+        id: `${product.id}-${col.color_name.toLowerCase()}`,
+        parentProductId: product.id,
+        name: `${product.name} - ${col.color_name}`,
+        selectedColorName: col.color_name,
+        price: variantPrice,
+        compareAtPrice: variantComparePrice,
+        primaryImage: primaryForColor,
+        images: orderedImages,
+        colors: reorderedColors,
+        variants: matchingVariants.length > 0 ? matchingVariants : product.variants,
+      });
+    });
+  }
+
+  return result;
+}
+
 export interface FetchProductsOptions {
   page?: number;
   limit?: number;
@@ -202,16 +274,32 @@ export async function fetchPaginatedProducts(
       );
     }
 
-    if (options.sort === 'price_asc') {
-      formatted.sort((a, b) => a.price - b.price);
-    } else if (options.sort === 'price_desc') {
-      formatted.sort((a, b) => b.price - a.price);
+    let expanded = expandProductsByColor(formatted);
+
+    if (options.color) {
+      const colorsArr = Array.isArray(options.color)
+        ? options.color.map((c) => c.toLowerCase())
+        : typeof options.color === 'string'
+        ? options.color.split(',').map((c) => c.trim().toLowerCase()).filter(Boolean)
+        : [];
+
+      if (colorsArr.length > 0) {
+        expanded = expanded.filter(
+          (p) => p.selectedColorName && colorsArr.includes(p.selectedColorName.toLowerCase())
+        );
+      }
     }
 
-    const totalFiltered = formatted.length;
+    if (options.sort === 'price_asc') {
+      expanded.sort((a, b) => a.price - b.price);
+    } else if (options.sort === 'price_desc') {
+      expanded.sort((a, b) => b.price - a.price);
+    }
+
+    const totalFiltered = expanded.length;
     const totalPages = Math.ceil(totalFiltered / limit);
     const startIndex = (page - 1) * limit;
-    const paginatedProducts = formatted.slice(startIndex, startIndex + limit);
+    const paginatedProducts = expanded.slice(startIndex, startIndex + limit);
 
     return {
       products: paginatedProducts,

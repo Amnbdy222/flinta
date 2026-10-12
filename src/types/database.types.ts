@@ -158,6 +158,8 @@ export interface FormattedProduct {
   colors: { color_name: string; color_hex: string }[];
   sizes: string[];
   variants: ProductVariant[];
+  selectedColorName?: string;
+  parentProductId?: string;
 }
 
 export interface Cart {

@@ -141,9 +141,10 @@ export const ProductDetailPage: React.FC = () => {
           const initialSize = colorVariants.find((v) => v.stock > 0)?.size || colorVariants[0]?.size || '';
           setSelectedSize(initialSize);
 
-          // Fetch related active products
           const catalog = await fetchActiveProducts();
-          setRelatedProducts(catalog.filter((p) => p.slug !== slug).slice(0, 4));
+          setRelatedProducts(
+            catalog.filter((p) => p.slug !== slug && p.parentProductId !== item.id).slice(0, 4)
+          );
         } else {
           setProduct(null);
         }
