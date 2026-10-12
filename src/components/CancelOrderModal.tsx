@@ -91,8 +91,8 @@ export const CancelOrderModal: React.FC<CancelOrderModalProps> = ({
                   {isPaidRazorpay ? 'CANCEL & REFUND ORDER' : 'CANCEL ORDER'}
                 </span>
               </div>
-              <h2 className="font-editorial text-2xl uppercase tracking-wide text-[#0A0A0A]">
-                ORDER #{displayOrderNum}
+              <h2 className="!font-sans text-xl sm:text-2xl font-bold uppercase tracking-wide text-[#0A0A0A]">
+                ORDER <span className="font-mono font-semibold tracking-wider">#{displayOrderNum}</span>
               </h2>
             </div>
 

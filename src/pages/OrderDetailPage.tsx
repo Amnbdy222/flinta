@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { fetchOrderDetail, formatOrderNumber } from '../services/orderService';
 import {
@@ -24,6 +24,9 @@ import {
   Clock,
   Ban,
   Truck,
+  MoreVertical,
+  Printer,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
 
@@ -42,6 +45,23 @@ export const OrderDetailPage: React.FC = () => {
   const [returnModalOpen, setReturnModalOpen] = useState(false);
   const [exchangeModalOpen, setExchangeModalOpen] = useState(false);
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close 3-dot menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -155,8 +175,8 @@ export const OrderDetailPage: React.FC = () => {
               <span className="text-[0.6rem] sm:text-[0.65rem] font-medium tracking-[0.25em] text-[#736E65] uppercase block">
                 ORDER CONFIRMATION SNAPSHOT
               </span>
-              <h1 className="font-editorial text-lg sm:text-2xl md:text-3xl font-normal tracking-tight text-[#0A0A0A] mt-0.5">
-                ORDER #{displayOrderNum}
+              <h1 className="!font-sans text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-[#0A0A0A] mt-0.5">
+                ORDER <span className="font-mono font-semibold tracking-wider">#{displayOrderNum}</span>
               </h1>
             </div>
 
@@ -175,24 +195,96 @@ export const OrderDetailPage: React.FC = () => {
             PLACED ON {formattedDate.toUpperCase()}
           </p>
 
-          {/* Status Badges & Actions */}
-          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-2.5 hairline-t">
-            <span className={`px-2.5 py-1 text-[0.6rem] sm:text-xs tracking-wider uppercase font-medium border ${getStatusBadge(order.status)}`}>
-              STATUS: {order.status.toUpperCase()}
-            </span>
-            <span className="px-2.5 py-1 text-[0.6rem] sm:text-xs tracking-wider uppercase font-medium border border-blue-900/30 text-blue-900 bg-blue-50">
-              PAYMENT: {order.payment_status.toUpperCase()}
-            </span>
-            {isCancellable && (
+          {/* Status Badges & 3-Dot Options Menu */}
+          <div className="flex items-center justify-between gap-2 pt-2.5 hairline-t">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <span className={`px-2.5 py-1 text-[0.6rem] sm:text-xs tracking-wider uppercase font-medium border ${getStatusBadge(order.status)}`}>
+                STATUS: {order.status.toUpperCase()}
+              </span>
+              <span className="px-2.5 py-1 text-[0.6rem] sm:text-xs tracking-wider uppercase font-medium border border-blue-900/30 text-blue-900 bg-blue-50">
+                PAYMENT: {order.payment_status.toUpperCase()}
+              </span>
+            </div>
+
+            {/* 3-Dot Options Menu */}
+            <div className="relative shrink-0" ref={menuRef}>
               <button
                 type="button"
-                onClick={() => setCancelModalOpen(true)}
-                className="inline-flex items-center space-x-1 bg-rose-50 text-rose-900 border border-rose-900/30 hover:bg-rose-900 hover:text-white text-[0.6rem] sm:text-xs uppercase tracking-wider font-medium px-2.5 py-1 sm:px-3 sm:py-1.5 transition-colors cursor-pointer shrink-0"
+                onClick={() => setMenuOpen((prev) => !prev)}
+                className="inline-flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 border border-[#0A0A0A]/15 hover:border-[#0A0A0A] bg-[#FAF9F6] hover:bg-white text-[#0A0A0A] transition-colors cursor-pointer"
+                title="More order options"
+                aria-label="More order options"
+                aria-expanded={menuOpen}
               >
-                <Ban size={11} />
-                <span>CANCEL ORDER</span>
+                <MoreVertical size={14} />
               </button>
-            )}
+
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-48 sm:w-52 bg-white border border-[#0A0A0A]/12 shadow-xl py-1 z-40">
+                  {isCancellable && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setCancelModalOpen(true);
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 flex items-center space-x-2.5 transition-colors cursor-pointer"
+                    >
+                      <Ban size={13} className="text-rose-600 shrink-0" />
+                      <span>CANCEL ORDER</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleCopyOrderNumber();
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0A0A0A] hover:bg-[#FAF9F6] flex items-center space-x-2.5 transition-colors cursor-pointer"
+                  >
+                    <Copy size={13} className="text-[#736E65] shrink-0" />
+                    <span>COPY ORDER ID</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      window.print();
+                    }}
+                    className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0A0A0A] hover:bg-[#FAF9F6] flex items-center space-x-2.5 transition-colors cursor-pointer"
+                  >
+                    <Printer size={13} className="text-[#736E65] shrink-0" />
+                    <span>PRINT / SAVE INVOICE</span>
+                  </button>
+                  {isEligibleForReturnExchange && !returnRequest && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setReturnModalOpen(true);
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0A0A0A] hover:bg-[#FAF9F6] flex items-center space-x-2.5 transition-colors cursor-pointer border-t border-[#0A0A0A]/5"
+                    >
+                      <RotateCcw size={13} className="text-[#736E65] shrink-0" />
+                      <span>REQUEST RETURN</span>
+                    </button>
+                  )}
+                  {isEligibleForReturnExchange && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        setExchangeModalOpen(true);
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0A0A0A] hover:bg-[#FAF9F6] flex items-center space-x-2.5 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeftRight size={13} className="text-[#736E65] shrink-0" />
+                      <span>REQUEST EXCHANGE</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
