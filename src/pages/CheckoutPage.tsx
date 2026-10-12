@@ -233,9 +233,10 @@ export const CheckoutPage: React.FC = () => {
               } catch (dErr) {
                 console.warn('Order state check error on dismiss:', dErr);
               }
+              pendingRazorpayOrderRef.current = null;
               setIsSubmitting(false);
               isPlacingOrderRef.current = false;
-              setOrderError('Payment checkout was closed. If you completed a payment, it will be verified automatically.');
+              setOrderError('Payment checkout was closed without completing. You can retry or select Cash on Delivery.');
             },
             async (errorMsg) => {
               // PAYMENT ERROR / DISMISS: Check if payment was actually verified/paid on server
