@@ -59,8 +59,34 @@ export const HomePage: React.FC = () => {
     loadCatalog();
   }, []);
 
+  const [selectedTrendingCategory, setSelectedTrendingCategory] = useState<string>('all');
+
   // Filter curated products for top deals
   const topDeals = products.filter((p) => p.is_top_deal);
+
+  // Helper to match product categories robustly
+  const normalizeCategory = (str: string) => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const matchesCategory = (prodCategory: string, selectedSlug: string) => {
+    if (!selectedSlug || selectedSlug === 'all') return true;
+    const pNorm = normalizeCategory(prodCategory);
+    const sNorm = normalizeCategory(selectedSlug);
+    if (pNorm === sNorm) return true;
+    const isTshirtTarget = sNorm.includes('tshirt') || sNorm.includes('tee');
+    const isTshirtProd = pNorm.includes('tshirt') || pNorm.includes('tee');
+    if (isTshirtTarget) return isTshirtProd;
+    if (sNorm === 'shirt' || sNorm === 'shirts') return (pNorm === 'shirt' || pNorm === 'shirts') && !isTshirtProd;
+    if (sNorm.includes('track') || sNorm.includes('jogger')) return pNorm.includes('track') || pNorm.includes('jogger');
+    if (sNorm.includes('hoodie') || sNorm.includes('jacket')) return pNorm.includes('hoodie') || pNorm.includes('jacket');
+    if (sNorm.includes('jean') || sNorm.includes('denim')) return pNorm.includes('jean') || pNorm.includes('denim');
+    if (sNorm.includes('cargo')) return pNorm.includes('cargo');
+    return pNorm.includes(sNorm) || sNorm.includes(pNorm);
+  };
+
+  // Filter products by selected category tab
+  const filteredTrendingProducts = products.filter((p) =>
+    matchesCategory(p.category, selectedTrendingCategory)
+  );
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#0A0A0A] selection:bg-[#0A0A0A] selection:text-[#FAF9F6]">
@@ -74,20 +100,60 @@ export const HomePage: React.FC = () => {
       {/* 2. SHOP BY CATEGORY (DEPARTMENTS) */}
       <CategorySection categories={categories} loading={catalogLoading} />
 
-      {/* 3. TRENDING NOW (ALL PRODUCTS WITH CURATED BADGES) */}
-      <section className="py-14 sm:py-16 md:py-24 bg-[#FAF9F6] hairline-b" aria-label="Trending Products">
+      {/* 3. TRENDING NOW (ALL PRODUCTS WITH CURATED BADGES & CATEGORY TABS) */}
+      <section className="py-12 sm:py-16 md:py-20 bg-[#FAF9F6] hairline-b" aria-label="Trending Products">
         <div className="container-editorial">
-          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-8 sm:mb-10 md:mb-12 pb-5 sm:pb-6 hairline-b gap-2 sm:gap-0">
+          {/* Section Header */}
+          <div className="flex flex-col sm:flex-row sm:items-baseline justify-between mb-4 sm:mb-6 gap-2 sm:gap-0">
             <div>
               <span className="editorial-subtitle block mb-1.5 sm:mb-2">CURATED ARCHIVE // 2026</span>
               <h2 className="section-title uppercase">TRENDING NOW</h2>
             </div>
             <Link
-              to="/shop"
-              className="text-[0.7rem] sm:text-xs tracking-[0.25em] font-medium uppercase link-underline text-[#0A0A0A] self-start sm:self-auto"
+              to={
+                selectedTrendingCategory === 'all'
+                  ? '/shop'
+                  : `/shop?category=${encodeURIComponent(selectedTrendingCategory)}`
+              }
+              className="text-[0.7rem] sm:text-xs tracking-[0.25em] font-medium uppercase link-underline text-[#0A0A0A] self-start sm:self-auto hover:text-[#D45A45] transition-colors"
             >
-              EXPLORE ALL ({products.length})
+              EXPLORE ALL ({filteredTrendingProducts.length})
             </Link>
+          </div>
+
+          {/* CATEGORY FILTER TABS (Minimalist underline tabs matching editorial reference) */}
+          <div className="flex items-center gap-5 sm:gap-8 md:gap-10 overflow-x-auto no-scrollbar border-b border-[#0A0A0A]/12 mb-8 sm:mb-10 md:mb-12 scroll-smooth">
+            <button
+              type="button"
+              onClick={() => setSelectedTrendingCategory('all')}
+              className={`pb-2.5 sm:pb-3.5 text-xs sm:text-[0.8rem] md:text-sm uppercase tracking-[0.18em] transition-all whitespace-nowrap relative font-medium focus-visible:outline-none ${
+                selectedTrendingCategory === 'all'
+                  ? 'text-[#0A0A0A] font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#0A0A0A]'
+                  : 'text-[#736E65] hover:text-[#0A0A0A]'
+              }`}
+            >
+              ALL
+            </button>
+
+            {categories
+              .filter((c) => c.is_active)
+              .map((cat) => {
+                const isActive = selectedTrendingCategory === cat.slug;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedTrendingCategory(cat.slug)}
+                    className={`pb-2.5 sm:pb-3.5 text-xs sm:text-[0.8rem] md:text-sm uppercase tracking-[0.18em] transition-all whitespace-nowrap relative font-medium focus-visible:outline-none ${
+                      isActive
+                        ? 'text-[#0A0A0A] font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-[#0A0A0A]'
+                        : 'text-[#736E65] hover:text-[#0A0A0A]'
+                    }`}
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
           </div>
 
           {catalogLoading ? (
@@ -97,15 +163,24 @@ export const HomePage: React.FC = () => {
               <ProductSkeleton />
               <ProductSkeleton />
             </div>
-          ) : products.length > 0 ? (
+          ) : filteredTrendingProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 lg:gap-10">
-              {products.map((product: FormattedProduct) => (
+              {filteredTrendingProducts.map((product: FormattedProduct) => (
                 <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (
-            <div className="py-12 text-center text-xs text-[#736E65] font-light">
-              No products found in the active catalog.
+            <div className="py-16 text-center">
+              <p className="text-xs sm:text-sm text-[#736E65] font-light uppercase tracking-wider mb-3">
+                No products found in this category archive.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSelectedTrendingCategory('all')}
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0A0A0A] uppercase tracking-widest underline underline-offset-4 hover:text-[#D45A45] transition-colors"
+              >
+                View All Products
+              </button>
             </div>
           )}
         </div>
