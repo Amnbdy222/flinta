@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   fetchCustomerReturnRequests,
   fetchCustomerExchangeRequests,
@@ -10,7 +11,7 @@ import {
 import { formatOrderNumber } from '../services/orderService';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
-import { RotateCcw, RefreshCw, DollarSign, ShieldCheck } from 'lucide-react';
+import { RotateCcw, RefreshCw, DollarSign, ShieldCheck, ArrowRight } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
 
 export const AccountReturnsPage: React.FC = () => {
@@ -101,6 +102,21 @@ export const AccountReturnsPage: React.FC = () => {
               </button>
             ))}
           </div>
+
+          {/* QUICK PROMPT FOR DELIVERED ORDERS */}
+          <div className="bg-[#FAF9F6] p-3 sm:p-3.5 border border-[#0A0A0A]/10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs">
+            <div className="flex items-center space-x-2 text-[#383531]">
+              <RotateCcw size={14} className="text-[#0A0A0A] shrink-0" />
+              <span>Want to initiate a return or exchange for a delivered order?</span>
+            </div>
+            <Link
+              to="/account/orders"
+              className="inline-flex items-center space-x-1.5 font-semibold text-[#0A0A0A] hover:underline uppercase tracking-wider text-[0.65rem] shrink-0"
+            >
+              <span>CHOOSE DELIVERED ORDER</span>
+              <ArrowRight size={11} />
+            </Link>
+          </div>
         </div>
 
         {/* CONTENT */}
@@ -118,8 +134,17 @@ export const AccountReturnsPage: React.FC = () => {
             {activeTab === 'returns' && (
               <div className="space-y-3 sm:space-y-4">
                 {returns.length === 0 ? (
-                  <div className="bg-white py-10 sm:py-12 px-5 sm:px-6 hairline-all">
+                  <div className="bg-white py-10 sm:py-12 px-5 sm:px-6 hairline-all text-center space-y-4">
                     <EmptyState title="NO RETURN REQUESTS" message="You have no active or previous item return requests." />
+                    <div className="pt-2">
+                      <Link
+                        to="/account/orders"
+                        className="btn-editorial-outline py-2.5 px-5 text-[0.65rem] tracking-[0.2em] inline-flex items-center space-x-2"
+                      >
+                        <span>SELECT A DELIVERED ORDER TO RETURN</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   returns.map((ret) => (
@@ -165,8 +190,17 @@ export const AccountReturnsPage: React.FC = () => {
             {activeTab === 'exchanges' && (
               <div className="space-y-3 sm:space-y-4">
                 {exchanges.length === 0 ? (
-                  <div className="bg-white py-10 sm:py-12 px-5 sm:px-6 hairline-all">
+                  <div className="bg-white py-10 sm:py-12 px-5 sm:px-6 hairline-all text-center space-y-4">
                     <EmptyState title="NO EXCHANGE REQUESTS" message="You have no active or completed garment size exchange requests." />
+                    <div className="pt-2">
+                      <Link
+                        to="/account/orders"
+                        className="btn-editorial-outline py-2.5 px-5 text-[0.65rem] tracking-[0.2em] inline-flex items-center space-x-2"
+                      >
+                        <span>SELECT A DELIVERED ORDER TO EXCHANGE</span>
+                        <ArrowRight size={12} />
+                      </Link>
+                    </div>
                   </div>
                 ) : (
                   exchanges.map((ex) => (

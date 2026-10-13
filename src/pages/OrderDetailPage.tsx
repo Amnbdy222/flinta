@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { fetchOrderDetail, formatOrderNumber } from '../services/orderService';
 import {
   fetchReturnRequest,
@@ -32,6 +32,7 @@ import { AccountLayout } from '../components/AccountLayout';
 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { settings } = useStoreSettings();
   const [order, setOrder] = useState<Order | null>(null);
   const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
@@ -94,6 +95,23 @@ export const OrderDetailPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  // Auto-open Return or Exchange modal if triggered from query parameter (e.g. ?action=return)
+  useEffect(() => {
+    if (!order || order.status !== 'delivered') return;
+    const action = searchParams.get('action');
+    if (action === 'return' && !returnRequest) {
+      setReturnModalOpen(true);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      setSearchParams(newParams, { replace: true });
+    } else if (action === 'exchange') {
+      setExchangeModalOpen(true);
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('action');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [order, returnRequest, searchParams, setSearchParams]);
+
   const displayOrderNum = formatOrderNumber(order?.order_number);
 
   const handleCopyOrderNumber = () => {
@@ -146,8 +164,8 @@ export const OrderDetailPage: React.FC = () => {
     }
   };
 
-  const isEligibleForReturnExchange =
-    order.status === 'delivered' || order.status === 'confirmed' || order.status === 'shipped';
+  const isDelivered = order.status === 'delivered';
+  const isEligibleForReturnExchange = isDelivered;
 
   const isCancellable =
     ['pending', 'confirmed', 'processing'].includes(order.status) &&
@@ -263,10 +281,10 @@ export const OrderDetailPage: React.FC = () => {
                         setMenuOpen(false);
                         setReturnModalOpen(true);
                       }}
-                      className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0A0A0A] hover:bg-[#FAF9F6] flex items-center space-x-2.5 transition-colors cursor-pointer border-t border-[#0A0A0A]/5"
+                      className="w-full text-left px-3.5 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 flex items-center space-x-2.5 transition-colors cursor-pointer border-t border-[#0A0A0A]/5"
                     >
-                      <RotateCcw size={13} className="text-[#736E65] shrink-0" />
-                      <span>REQUEST RETURN</span>
+                      <RotateCcw size={13} className="text-rose-600 shrink-0" />
+                      <span>REQUEST RETURN & REFUND</span>
                     </button>
                   )}
                   {isEligibleForReturnExchange && (
@@ -279,7 +297,7 @@ export const OrderDetailPage: React.FC = () => {
                       className="w-full text-left px-3.5 py-2 text-xs font-medium text-[#0A0A0A] hover:bg-[#FAF9F6] flex items-center space-x-2.5 transition-colors cursor-pointer"
                     >
                       <ArrowLeftRight size={13} className="text-[#736E65] shrink-0" />
-                      <span>REQUEST EXCHANGE</span>
+                      <span>REQUEST SIZE EXCHANGE</span>
                     </button>
                   )}
                 </div>
@@ -301,36 +319,67 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         )}
 
-        {/* RETURN / EXCHANGE ACTION BAR */}
-        {isEligibleForReturnExchange && (
-          <div className="p-3.5 sm:p-6 bg-[#F0EFEA] hairline-all flex flex-col gap-3 sm:gap-4">
-            <div className="space-y-0.5 sm:space-y-1">
-              <h3 className="font-editorial text-sm sm:text-lg text-[#0A0A0A] uppercase tracking-wide">
-                NEED A RETURN OR GARMENT EXCHANGE?
-              </h3>
-              <p className="text-[0.68rem] sm:text-xs text-[#736E65] font-light">
-                Delivered orders are eligible for complimentary exchanges or full returns.
-              </p>
+        {/* POST-DELIVERY RETURN & REFUND ACTION CARD */}
+        {isEligibleForReturnExchange && !returnRequest && (
+          <div className="p-4 sm:p-6 bg-white hairline-all space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 hairline-b">
+              <div className="flex items-start sm:items-center space-x-3">
+                <div className="w-9 h-9 bg-emerald-50 text-emerald-900 border border-emerald-900/30 flex items-center justify-center shrink-0">
+                  <Check size={18} />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-widest uppercase text-emerald-900 bg-emerald-50 px-2 py-0.5 border border-emerald-900/20">
+                      DELIVERED ORDER
+                    </span>
+                    <span className="text-[0.6rem] sm:text-[0.65rem] font-semibold tracking-widest uppercase text-[#736E65]">
+                      7-DAY RETURN WINDOW ACTIVE
+                    </span>
+                  </div>
+                  <h3 className="font-editorial text-base sm:text-xl uppercase tracking-wide text-[#0A0A0A] mt-1">
+                    RETURN, REFUND OR SIZE EXCHANGE
+                  </h3>
+                </div>
+              </div>
             </div>
-            <div className="flex flex-col xs:flex-row flex-wrap gap-2 sm:gap-3">
-              {!returnRequest && (
-                <button
-                  type="button"
-                  onClick={() => setReturnModalOpen(true)}
-                  className="inline-flex items-center justify-center space-x-2 bg-transparent border border-[#0A0A0A] px-4 py-2.5 sm:py-2 text-[0.65rem] sm:text-xs uppercase tracking-widest font-medium text-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-[#FAF9F6] transition-colors"
-                >
-                  <RotateCcw size={13} />
-                  <span>REQUEST RETURN</span>
-                </button>
-              )}
+
+            <p className="text-xs text-[#383531] font-light leading-relaxed">
+              This order was successfully delivered. If the fit isn't right or you would like to return your items, you can request a <strong>100% refund</strong> to your original payment method / bank account, or request a <strong>free size exchange</strong>.
+            </p>
+
+            <div className="flex flex-col xs:flex-row flex-wrap gap-2.5 sm:gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setReturnModalOpen(true)}
+                className="inline-flex items-center justify-center space-x-2 bg-rose-900 text-[#FAF9F6] hover:bg-rose-950 px-5 py-2.5 sm:py-3 text-xs uppercase tracking-widest font-semibold transition-colors cursor-pointer"
+              >
+                <RotateCcw size={14} />
+                <span>REQUEST RETURN & REFUND</span>
+              </button>
+
               <button
                 type="button"
                 onClick={() => setExchangeModalOpen(true)}
-                className="inline-flex items-center justify-center space-x-2 bg-[#0A0A0A] text-[#FAF9F6] border border-[#0A0A0A] px-4 py-2.5 sm:py-2 text-[0.65rem] sm:text-xs uppercase tracking-widest font-medium hover:bg-transparent hover:text-[#0A0A0A] transition-colors"
+                className="inline-flex items-center justify-center space-x-2 bg-white text-[#0A0A0A] border border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-[#FAF9F6] px-5 py-2.5 sm:py-3 text-xs uppercase tracking-widest font-semibold transition-colors cursor-pointer"
               >
-                <RefreshCw size={13} />
-                <span>EXCHANGE GARMENT</span>
+                <RefreshCw size={14} />
+                <span>EXCHANGE SIZE</span>
               </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 hairline-t text-[0.65rem] text-[#736E65] tracking-wider uppercase font-medium">
+              <div className="flex items-center space-x-1.5">
+                <Check size={12} className="text-emerald-700 shrink-0" />
+                <span>DOORSTEP REVERSE PICKUP</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <Check size={12} className="text-emerald-700 shrink-0" />
+                <span>100% SECURE REFUND</span>
+              </div>
+              <div className="flex items-center space-x-1.5">
+                <Check size={12} className="text-emerald-700 shrink-0" />
+                <span>EASY REPLACEMENT DISPATCH</span>
+              </div>
             </div>
           </div>
         )}

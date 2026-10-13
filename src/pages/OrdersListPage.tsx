@@ -171,24 +171,42 @@ export const OrdersListPage: React.FC = () => {
 
                   {/* ACTIVE RETURN / EXCHANGE BADGES */}
                   {(activeReturn || activeExchange) && (
-                    <div className="px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-900 text-xs flex items-center space-x-2">
-                      <RotateCcw size={14} className="shrink-0" />
-                      <span className="font-medium">
-                        {activeReturn ? `Return Requested (${activeReturn.status})` : `Exchange Requested (${activeExchange?.status})`}
-                      </span>
+                    <div className="px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-900 text-xs flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <RotateCcw size={14} className="shrink-0" />
+                        <span className="font-medium">
+                          {activeReturn ? `Return Requested (${activeReturn.status.toUpperCase()})` : `Exchange Requested (${activeExchange?.status.toUpperCase()})`}
+                        </span>
+                      </div>
+                      <Link
+                        to="/account/returns"
+                        className="text-[0.65rem] font-semibold tracking-widest uppercase underline text-amber-900 hover:text-black"
+                      >
+                        TRACK STATUS
+                      </Link>
                     </div>
                   )}
 
                   {/* ACTIONS BAR */}
-                  <div className="p-4 sm:px-6 sm:py-4 flex flex-wrap items-center justify-end gap-3 bg-white">
+                  <div className="p-4 sm:px-6 sm:py-4 flex flex-wrap items-center justify-end gap-2.5 bg-white">
                     {order.status === 'delivered' && !activeReturn && !activeExchange && (
-                      <Link
-                        to="/account/returns"
-                        className="px-3.5 py-2 border border-[#0A0A0A]/20 text-[#0A0A0A] hover:border-[#0A0A0A] text-[0.65rem] font-semibold tracking-widest uppercase transition-colors inline-flex items-center space-x-1.5"
-                      >
-                        <RefreshCw size={13} />
-                        <span>RETURN / EXCHANGE</span>
-                      </Link>
+                      <>
+                        <Link
+                          to={`/account/orders/${order.id}?action=return`}
+                          className="px-3.5 py-2 bg-rose-50 border border-rose-300 text-rose-900 hover:bg-rose-900 hover:text-[#FAF9F6] text-[0.65rem] font-semibold tracking-widest uppercase transition-colors inline-flex items-center space-x-1.5"
+                        >
+                          <RotateCcw size={12} />
+                          <span>RETURN & REFUND</span>
+                        </Link>
+
+                        <Link
+                          to={`/account/orders/${order.id}?action=exchange`}
+                          className="px-3.5 py-2 border border-[#0A0A0A]/30 text-[#0A0A0A] hover:border-[#0A0A0A] hover:bg-[#0A0A0A] hover:text-[#FAF9F6] text-[0.65rem] font-semibold tracking-widest uppercase transition-colors inline-flex items-center space-x-1.5"
+                        >
+                          <RefreshCw size={12} />
+                          <span>EXCHANGE</span>
+                        </Link>
+                      </>
                     )}
 
                     <Link
