@@ -1,20 +1,23 @@
 import type { Handler } from '@netlify/functions';
 import { trackShipmentByAWB } from './_shiprocket-client';
 import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://klzwqmphtyvwubfqhgbf.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsendxbXBodHl2d3ViZnFoZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjU5NzcsImV4cCI6MjEwMzE0MTk3N30.NsZpViSPATovps_ON_wSIt0sS5ludqAL9rxovdgYfug';
+import { getSecureCorsHeaders, handleCorsPreflight, getRequiredEnv } from './_security';
 
 export const handler: Handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    'Content-Type': 'application/json',
-  };
+  const preflight = handleCorsPreflight(event);
+  if (preflight) return preflight;
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
+  const headers = getSecureCorsHeaders(event);
+
+  // ── Strict environment variable resolution (zero hardcoded fallbacks) ──
+  let SUPABASE_URL: string;
+  let SUPABASE_ANON_KEY: string;
+  try {
+    SUPABASE_URL = getRequiredEnv('VITE_SUPABASE_URL', 'SUPABASE_URL');
+    SUPABASE_ANON_KEY = getRequiredEnv('VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');
+  } catch (cfgErr: any) {
+    console.error('[track-shipment] Config error:', cfgErr.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server configuration error.' }) };
   }
 
   try {

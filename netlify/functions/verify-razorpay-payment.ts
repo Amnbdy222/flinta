@@ -3,6 +3,7 @@ import * as crypto from 'crypto';
 import Razorpay from 'razorpay';
 import { createClient } from '@supabase/supabase-js';
 import { finalizeRazorpayPaymentServer } from './_payment-finalizer';
+import { getSecureCorsHeaders, handleCorsPreflight, getRequiredEnv } from './_security';
 
 /**
  * Netlify Function: verify-razorpay-payment
@@ -21,36 +22,35 @@ import { finalizeRazorpayPaymentServer } from './_payment-finalizer';
  */
 
 export const handler: Handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Content-Type': 'application/json',
-  };
+  const preflight = handleCorsPreflight(event);
+  if (preflight) return preflight;
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
+  const headers = getSecureCorsHeaders(event);
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  // ── Environment variable resolution with test defaults ──
-  const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://klzwqmphtyvwubfqhgbf.supabase.co';
-  const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsendxbXBodHl2d3ViZnFoZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjU5NzcsImV4cCI6MjEwMzE0MTk3N30.NsZpViSPATovps_ON_wSIt0sS5ludqAL9rxovdgYfug';
-  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || process.env.VITE_RAZORPAY_KEY_ID;
-  const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || process.env.VITE_RAZORPAY_KEY_SECRET;
-
-  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-    console.error('[verify-razorpay-payment] Razorpay credentials not configured in environment.');
+  // ── Strict environment variable resolution (zero hardcoded fallbacks) ──
+  let SUPABASE_URL: string;
+  let SUPABASE_ANON_KEY: string;
+  let RAZORPAY_KEY_ID: string;
+  let RAZORPAY_KEY_SECRET: string;
+  try {
+    SUPABASE_URL = getRequiredEnv('VITE_SUPABASE_URL', 'SUPABASE_URL');
+    SUPABASE_ANON_KEY = getRequiredEnv('VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');
+    RAZORPAY_KEY_ID = getRequiredEnv('RAZORPAY_KEY_ID', 'VITE_RAZORPAY_KEY_ID');
+    RAZORPAY_KEY_SECRET = getRequiredEnv('RAZORPAY_KEY_SECRET', 'VITE_RAZORPAY_KEY_SECRET');
+  } catch (cfgErr: any) {
+    console.error('[verify-razorpay-payment] Configuration error:', cfgErr.message);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ error: 'Payment gateway configuration error. Please contact store support.' }),
     };
   }
+
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   try {
     const body = JSON.parse(event.body || '{}');

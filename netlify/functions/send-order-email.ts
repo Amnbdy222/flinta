@@ -2,6 +2,7 @@ import type { Handler } from '@netlify/functions';
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 import { buildOrderConfirmationEmail, type OrderEmailData, type OrderItemEmailData } from './_email-templates';
+import { getSecureCorsHeaders, handleCorsPreflight, getRequiredEnv } from './_security';
 
 /**
  * Netlify Function: send-order-email
@@ -12,27 +13,30 @@ import { buildOrderConfirmationEmail, type OrderEmailData, type OrderItemEmailDa
  * Generates and sends order confirmation email via Resend.
  */
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || 'https://klzwqmphtyvwubfqhgbf.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsendxbXBodHl2d3ViZnFoZ2JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1NjU5NzcsImV4cCI6MjEwMzE0MTk3N30.NsZpViSPATovps_ON_wSIt0sS5ludqAL9rxovdgYfug';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-const SENDER_EMAIL = process.env.SENDER_EMAIL || 'noreply@flintaindia.com';
-
 export const handler: Handler = async (event) => {
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json',
-  };
+  const preflight = handleCorsPreflight(event);
+  if (preflight) return preflight;
 
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers, body: '' };
-  }
+  const headers = getSecureCorsHeaders(event);
 
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
+
+  // ── Strict environment variable resolution (zero hardcoded fallbacks) ──
+  let SUPABASE_URL: string;
+  let SUPABASE_ANON_KEY: string;
+  try {
+    SUPABASE_URL = getRequiredEnv('VITE_SUPABASE_URL', 'SUPABASE_URL');
+    SUPABASE_ANON_KEY = getRequiredEnv('VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY');
+  } catch (cfgErr: any) {
+    console.error('[send-order-email] Config error:', cfgErr.message);
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server configuration error.' }) };
+  }
+
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+  const SENDER_EMAIL = process.env.SENDER_EMAIL || 'noreply@flintaindia.com';
 
   if (!RESEND_API_KEY) {
     console.error('RESEND_API_KEY is not configured');
