@@ -10,8 +10,7 @@ import {
 import { Order } from '../types/database.types';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
-import { CancelOrderModal } from '../components/CancelOrderModal';
-import { ArrowRight, Package, RotateCcw, RefreshCw, Ban } from 'lucide-react';
+import { ArrowRight, Package, RotateCcw, RefreshCw } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
 import { useStoreSettings } from '../context/StoreSettingsContext';
 
@@ -20,8 +19,6 @@ export const OrdersListPage: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [returnsMap, setReturnsMap] = useState<Record<string, CustomerReturnWithOrder>>({});
   const [exchangesMap, setExchangesMap] = useState<Record<string, CustomerExchangeWithOrder>>({});
-
-  const [selectedOrderForCancel, setSelectedOrderForCancel] = useState<Order | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -123,9 +120,6 @@ export const OrdersListPage: React.FC = () => {
 
               const activeReturn = returnsMap[order.id];
               const activeExchange = exchangesMap[order.id];
-              const isCancellable =
-                ['pending', 'confirmed', 'processing'].includes(order.status) &&
-                !(order.payment_method === 'razorpay' && order.payment_status !== 'paid');
 
               return (
                 <div
@@ -187,17 +181,6 @@ export const OrdersListPage: React.FC = () => {
 
                   {/* ACTIONS BAR */}
                   <div className="p-4 sm:px-6 sm:py-4 flex flex-wrap items-center justify-end gap-3 bg-white">
-                    {isCancellable && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedOrderForCancel(order)}
-                        className="px-3.5 py-2 border border-red-900/30 text-red-900 hover:bg-red-50 text-[0.65rem] font-semibold tracking-widest uppercase transition-colors inline-flex items-center space-x-1.5 cursor-pointer"
-                      >
-                        <Ban size={13} />
-                        <span>CANCEL</span>
-                      </button>
-                    )}
-
                     {order.status === 'delivered' && !activeReturn && !activeExchange && (
                       <Link
                         to="/account/returns"
@@ -220,16 +203,6 @@ export const OrdersListPage: React.FC = () => {
               );
             })}
           </div>
-        )}
-
-        {/* CANCEL MODAL */}
-        {selectedOrderForCancel && (
-          <CancelOrderModal
-            order={selectedOrderForCancel}
-            isOpen={Boolean(selectedOrderForCancel)}
-            onClose={() => setSelectedOrderForCancel(null)}
-            onSuccess={loadOrders}
-          />
         )}
       </div>
     </AccountLayout>
