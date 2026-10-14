@@ -181,6 +181,10 @@ export const CartDrawer: React.FC = () => {
                       <img
                         src={item.image_url}
                         alt={item.product_name}
+                        loading="lazy"
+                        decoding="async"
+                        width="80"
+                        height="96"
                         className="w-20 h-24 object-cover object-top bg-[#F0EFEA] hairline-all"
                       />
                     </Link>

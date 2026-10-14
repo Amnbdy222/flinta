@@ -141,6 +141,9 @@ export const CategorySection: React.FC<CategorySectionProps> = ({ categories, lo
                     src={imageUrl}
                     alt={category.name}
                     loading="lazy"
+                    decoding="async"
+                    width="200"
+                    height="200"
                     className="w-full h-full object-contain object-center transition-transform duration-500 ease-out group-hover:scale-105"
                   />
                   {/* Subtle hover gradient sheen */}

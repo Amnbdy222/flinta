@@ -10,6 +10,7 @@ import { Order } from '../types/database.types';
 import { OrderSuccessModal } from '../components/OrderSuccessModal';
 import { lookupPincode } from '../services/pincodeService';
 import { SEO } from '../components/SEO';
+import { sanitizeText, sanitizeEmail, sanitizePhone, sanitizePincode } from '../utils/sanitize';
 import { AlertCircle, ArrowLeft, ArrowRight, CreditCard, ShieldCheck, Truck, Loader2, CheckCircle2, MapPin } from 'lucide-react';
 
 export const CheckoutPage: React.FC = () => {
@@ -170,14 +171,14 @@ export const CheckoutPage: React.FC = () => {
     setIsSubmitting(true);
 
     const shippingData: ShippingDetails = {
-      full_name: fullName.trim(),
-      phone: phone.trim(),
-      email: email.trim(),
-      address_line_1: line1.trim(),
-      address_line_2: line2.trim() || undefined,
-      city: city.trim(),
-      state: state.trim(),
-      pincode: pincode.trim(),
+      full_name: sanitizeText(fullName, 100),
+      phone: sanitizePhone(phone),
+      email: sanitizeEmail(email) || email.trim(),
+      address_line_1: sanitizeText(line1, 200),
+      address_line_2: line2.trim() ? sanitizeText(line2, 200) : undefined,
+      city: sanitizeText(city, 80),
+      state: sanitizeText(state, 80),
+      pincode: sanitizePincode(pincode),
     };
 
     try {
@@ -617,6 +618,10 @@ export const CheckoutPage: React.FC = () => {
                   <img
                     src={item.image_url}
                     alt={item.product_name}
+                    loading="lazy"
+                    decoding="async"
+                    width="48"
+                    height="64"
                     className="w-12 h-16 object-cover object-top bg-[#F0EFEA] hairline-all flex-shrink-0"
                   />
                   <div className="space-y-0.5 text-xs flex-1 min-w-0">

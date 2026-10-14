@@ -166,8 +166,8 @@ export const HomePage: React.FC = () => {
             </div>
           ) : filteredTrendingProducts.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8 lg:gap-10">
-              {filteredTrendingProducts.map((product: FormattedProduct) => (
-                <ProductCard key={product.id} product={product} />
+              {filteredTrendingProducts.map((product: FormattedProduct, idx: number) => (
+                <ProductCard key={product.id} product={product} priority={idx < 4} />
               ))}
             </div>
           ) : (

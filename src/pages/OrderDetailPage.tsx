@@ -512,6 +512,10 @@ export const OrderDetailPage: React.FC = () => {
                     <img
                       src={item.image_url || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=400&auto=format&fit=crop'}
                       alt={item.product_name_snapshot}
+                      loading="lazy"
+                      decoding="async"
+                      width="96"
+                      height="128"
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover/img:scale-105"
                     />
                   </Link>

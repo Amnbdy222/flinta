@@ -9,11 +9,13 @@ import { QuickViewModal } from './QuickViewModal';
 interface ProductCardProps {
   product: FormattedProduct;
   aspectRatio?: 'editorial' | 'portrait' | 'square';
+  priority?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
   product,
   aspectRatio = 'editorial',
+  priority = false,
 }) => {
   const { settings } = useStoreSettings();
   const [selectedColorIndex, setSelectedColorIndex] = useState<number>(0);
@@ -97,7 +99,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <img
               src={currentDisplayImage}
               alt={product.name}
-              loading="lazy"
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : 'auto'}
+              decoding="async"
+              width="600"
+              height="800"
               className="w-full h-full object-cover object-top origin-top transition-transform duration-700 ease-out md:group-hover:scale-105"
             />
           </Link>

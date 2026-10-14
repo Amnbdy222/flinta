@@ -15,6 +15,7 @@ import {
   ArrowUp,
 } from 'lucide-react';
 import { useStoreSettings } from '../context/StoreSettingsContext';
+import { sanitizeEmail } from '../utils/sanitize';
 
 export const Footer: React.FC = () => {
   const { settings } = useStoreSettings();
@@ -33,7 +34,8 @@ export const Footer: React.FC = () => {
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !email.includes('@')) return;
+    const cleanEmail = sanitizeEmail(email);
+    if (!cleanEmail) return;
 
     setSubmitting(true);
     setTimeout(() => {

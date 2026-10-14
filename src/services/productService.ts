@@ -1,5 +1,10 @@
 import { supabase } from '../lib/supabase';
 import { Product, FormattedProduct, ProductImage, ProductVariant } from '../types/database.types';
+import { cachedQuery } from './cacheService';
+
+const PRODUCT_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+const DETAIL_CACHE_TTL = 3 * 60 * 1000; // 3 minutes
+const FILTER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // High-fashion editorial default images for fallback presentation
 const EDITORIAL_FALLBACK_IMAGES = [
@@ -189,8 +194,10 @@ export async function fetchPaginatedProducts(
 ): Promise<PaginatedResult> {
   const page = options.page && options.page > 0 ? options.page : 1;
   const limit = options.limit && options.limit > 0 ? options.limit : 12;
+  const cacheKey = `paginated_prods_${JSON.stringify(options)}`;
 
-  try {
+  return cachedQuery(cacheKey, PRODUCT_CACHE_TTL, async () => {
+    try {
     let query = supabase
       .from('products')
       .select('*, product_variants(*), product_images(*)', { count: 'exact' })
@@ -312,32 +319,38 @@ export async function fetchPaginatedProducts(
     console.error('Unexpected error in fetchPaginatedProducts:', err);
     return { products: [], total: 0, page, limit, totalPages: 0 };
   }
+  });
 }
 
 export async function fetchActiveProducts(): Promise<FormattedProduct[]> {
-  const result = await fetchPaginatedProducts({ limit: 100 });
-  return result.products;
+  return cachedQuery('storefront_active_products_catalog', PRODUCT_CACHE_TTL, async () => {
+    const result = await fetchPaginatedProducts({ limit: 100 });
+    return result.products;
+  });
 }
 
 export async function fetchProductBySlug(slug: string): Promise<FormattedProduct | null> {
-  try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, product_variants(*), product_images(*)')
-      .eq('slug', slug)
-      .eq('status', 'active') // Strictly fetch ACTIVE products only for public security
-      .single();
+  const cacheKey = `product_slug_${slug.toLowerCase().trim()}`;
+  return cachedQuery(cacheKey, DETAIL_CACHE_TTL, async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, product_variants(*), product_images(*)')
+        .eq('slug', slug)
+        .eq('status', 'active') // Strictly fetch ACTIVE products only for public security
+        .single();
 
-    if (error || !data) {
-      console.error('Error fetching active product by slug:', error);
+      if (error || !data) {
+        console.error('Error fetching active product by slug:', error);
+        return null;
+      }
+
+      return formatProduct(data as Product, 0);
+    } catch (err) {
+      console.error('Unexpected error fetching active product by slug:', err);
       return null;
     }
-
-    return formatProduct(data as Product, 0);
-  } catch (err) {
-    console.error('Unexpected error fetching active product by slug:', err);
-    return null;
-  }
+  });
 }
 
 export interface DynamicFilterOptions {
@@ -348,65 +361,68 @@ export interface DynamicFilterOptions {
 }
 
 export async function fetchFilterOptions(): Promise<DynamicFilterOptions> {
-  try {
-    const { data } = await supabase
-      .from('products')
-      .select('*, product_variants(*)')
-      .eq('status', 'active');
+  return cachedQuery('storefront_filter_options', FILTER_CACHE_TTL, async () => {
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('*, product_variants(*)')
+        .eq('status', 'active');
 
-    if (!data || data.length === 0) {
+      if (!data || data.length === 0) {
+        return {
+          colors: [
+            { color_name: 'Black', color_hex: '#000000' },
+            { color_name: 'White', color_hex: '#FFFFFF' },
+            { color_name: 'Beige', color_hex: '#E6DFD5' },
+          ],
+          sizes: ['XS', 'S', 'M', 'L', 'XL'],
+          minPrice: 0,
+          maxPrice: 1000,
+        };
+      }
+
+      const colorMap = new Map<string, string>();
+      const sizeSet = new Set<string>();
+      let minPrice = Infinity;
+      let maxPrice = 0;
+
+      data.forEach((p) => {
+        const variants = p.product_variants || [];
+        variants.forEach((v: ProductVariant) => {
+          if (v.color_name && v.color_hex) {
+            colorMap.set(v.color_name, v.color_hex);
+          }
+          if (v.size) {
+            sizeSet.add(v.size.toUpperCase());
+          }
+          const price = Number(v.price);
+          if (price > 0) {
+            if (price < minPrice) minPrice = price;
+            if (price > maxPrice) maxPrice = price;
+          }
+        });
+      });
+
+      const colors = Array.from(colorMap.entries()).map(([color_name, color_hex]) => ({
+        color_name,
+        color_hex,
+      }));
+
       return {
-        colors: [
-          { color_name: 'Black', color_hex: '#000000' },
-          { color_name: 'White', color_hex: '#FFFFFF' },
-          { color_name: 'Beige', color_hex: '#E6DFD5' },
-        ],
-        sizes: ['XS', 'S', 'M', 'L', 'XL'],
+        colors: colors.length > 0 ? colors : [{ color_name: 'Black', color_hex: '#000000' }],
+        sizes: Array.from(sizeSet).sort(),
+        minPrice: minPrice === Infinity ? 0 : minPrice,
+        maxPrice: maxPrice === 0 ? 500 : maxPrice,
+      };
+    } catch (err) {
+      console.error('Error fetching filter options:', err);
+      return {
+        colors: [{ color_name: 'Black', color_hex: '#000000' }],
+        sizes: ['S', 'M', 'L'],
         minPrice: 0,
-        maxPrice: 1000,
+        maxPrice: 500,
       };
     }
-
-    const colorMap = new Map<string, string>();
-    const sizeSet = new Set<string>();
-    let minPrice = Infinity;
-    let maxPrice = 0;
-
-    data.forEach((p) => {
-      const variants = p.product_variants || [];
-      variants.forEach((v: ProductVariant) => {
-        if (v.color_name && v.color_hex) {
-          colorMap.set(v.color_name, v.color_hex);
-        }
-        if (v.size) {
-          sizeSet.add(v.size.toUpperCase());
-        }
-        const price = Number(v.price);
-        if (price > 0) {
-          if (price < minPrice) minPrice = price;
-          if (price > maxPrice) maxPrice = price;
-        }
-      });
-    });
-
-    const colors = Array.from(colorMap.entries()).map(([color_name, color_hex]) => ({
-      color_name,
-      color_hex,
-    }));
-
-    return {
-      colors: colors.length > 0 ? colors : [{ color_name: 'Black', color_hex: '#000000' }],
-      sizes: Array.from(sizeSet).sort(),
-      minPrice: minPrice === Infinity ? 0 : minPrice,
-      maxPrice: maxPrice === 0 ? 500 : maxPrice,
-    };
-  } catch (err) {
-    console.error('Error fetching filter options:', err);
-    return {
-      colors: [{ color_name: 'Black', color_hex: '#000000' }],
-      sizes: ['S', 'M', 'L'],
-      minPrice: 0,
-      maxPrice: 500,
-    };
-  }
+  });
 }
+

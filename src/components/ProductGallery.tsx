@@ -49,7 +49,11 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, altText 
         <img
           src={safeImages[activeIndex] || safeImages[0]}
           alt={`${altText} - Image ${activeIndex + 1}`}
-          loading="lazy"
+          loading={activeIndex === 0 ? 'eager' : 'lazy'}
+          fetchPriority={activeIndex === 0 ? 'high' : 'auto'}
+          decoding="async"
+          width="800"
+          height="1067"
           className="w-full h-full object-cover object-top transition-all duration-500 group-hover:scale-105"
         />
 
@@ -93,6 +97,9 @@ export const ProductGallery: React.FC<ProductGalleryProps> = ({ images, altText 
                 src={imgUrl}
                 alt={`Thumbnail ${idx + 1}`}
                 loading="lazy"
+                decoding="async"
+                width="80"
+                height="96"
                 className="w-full h-full object-cover object-top"
               />
             </button>

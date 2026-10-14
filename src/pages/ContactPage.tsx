@@ -5,6 +5,8 @@ import { submitContactInquiry } from '../services/contactService';
 import { AccountLayout } from '../components/AccountLayout';
 import { AlertCircle, CheckCircle2, Loader2, ArrowRight, Mail, Phone, MapPin } from 'lucide-react';
 
+import { sanitizeText, sanitizeEmail } from '../utils/sanitize';
+
 export const ContactPage: React.FC = () => {
   const { user, profile } = useAuth();
   const { settings } = useStoreSettings();
@@ -32,18 +34,22 @@ export const ContactPage: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!fullName.trim() || !email.trim() || !message.trim()) {
-      setError('Please fill in all required fields.');
+    const cleanName = sanitizeText(fullName, 100);
+    const cleanEmail = sanitizeEmail(email);
+    const cleanMessage = sanitizeText(message, 2000);
+
+    if (!cleanName || !cleanEmail || !cleanMessage) {
+      setError('Please provide a valid name, email address, and message.');
       return;
     }
 
     setSubmitting(true);
     try {
       await submitContactInquiry({
-        fullName,
-        email,
-        topic,
-        message,
+        fullName: cleanName,
+        email: cleanEmail,
+        topic: sanitizeText(topic, 50),
+        message: cleanMessage,
       });
       setSubmitted(true);
     } catch (err: unknown) {

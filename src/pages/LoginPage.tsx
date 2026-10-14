@@ -164,6 +164,10 @@ export const LoginPage: React.FC = () => {
             <img
               src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1200&auto=format&fit=crop"
               alt="FLINT Editorial"
+              loading="eager"
+              decoding="async"
+              width="600"
+              height="800"
               className="w-full h-full object-cover opacity-85 scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent flex flex-col justify-between p-5 sm:p-7 text-[#FAF9F6]">

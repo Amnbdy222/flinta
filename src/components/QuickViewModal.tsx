@@ -131,6 +131,10 @@ export const QuickViewModal: React.FC<QuickViewModalProps> = ({ product, isOpen,
           <img
             src={product.primaryImage}
             alt={product.name}
+            loading="lazy"
+            decoding="async"
+            width="600"
+            height="800"
             className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
           />
         </Link>

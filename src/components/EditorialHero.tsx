@@ -179,6 +179,7 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ banners, loading =
                       className="w-full h-full min-w-full min-h-full object-cover object-center scale-105 transition-transform duration-7000 ease-out"
                       fetchPriority={idx === 0 ? 'high' : 'auto'}
                       loading={idx === 0 ? 'eager' : 'lazy'}
+                      decoding="async"
                       onLoad={idx === 0 ? () => setIsInitialImageReady(true) : undefined}
                     />
                   </picture>
@@ -195,6 +196,8 @@ export const EditorialHero: React.FC<EditorialHeroProps> = ({ banners, loading =
                   alt={title}
                   className="w-full h-full min-w-full min-h-full object-cover object-center"
                   fetchPriority="high"
+                  loading="eager"
+                  decoding="async"
                 />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/20 z-10" />

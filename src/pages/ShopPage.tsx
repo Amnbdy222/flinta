@@ -314,8 +314,8 @@ export const ShopPage: React.FC = () => {
           ) : result.products.length > 0 ? (
             <>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 lg:gap-8">
-                {result.products.map((product) => (
-                  <ProductCard key={product.id} product={product} />
+                {result.products.map((product, idx) => (
+                  <ProductCard key={product.id} product={product} priority={idx < 4} />
                 ))}
               </div>
 

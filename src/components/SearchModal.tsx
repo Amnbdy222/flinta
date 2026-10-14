@@ -4,6 +4,7 @@ import { Search, X, Loader2 } from 'lucide-react';
 import { fetchPaginatedProducts } from '../services/productService';
 import { FormattedProduct } from '../types/database.types';
 import { useStoreSettings } from '../context/StoreSettingsContext';
+import { sanitizeText } from '../utils/sanitize';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -33,7 +34,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
 
   // Debounced search logic (300ms delay)
   useEffect(() => {
-    if (!searchTerm.trim()) {
+    const cleanTerm = sanitizeText(searchTerm, 80);
+    if (!cleanTerm) {
       setResults([]);
       setLoading(false);
       setError(false);
@@ -46,7 +48,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
     const timer = setTimeout(async () => {
       try {
         const res = await fetchPaginatedProducts({
-          search: searchTerm,
+          search: cleanTerm,
           limit: 6,
         });
         setResults(res.products);
@@ -148,6 +150,10 @@ export const SearchModal: React.FC<SearchModalProps> = ({ isOpen, onClose }) => 
                       <img
                         src={product.primaryImage}
                         alt={product.name}
+                        loading="lazy"
+                        decoding="async"
+                        width="64"
+                        height="80"
                         className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform"
                       />
                     </div>

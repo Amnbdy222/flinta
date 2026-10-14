@@ -15,6 +15,11 @@ export default defineConfig({
     open: false,
   },
   build: {
+    target: 'es2020',
+    cssCodeSplit: true,
+    modulePreload: {
+      polyfill: false,
+    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -25,5 +30,9 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 600,
+  },
+  esbuild: {
+    drop: ['debugger'],
+    legalComments: 'none',
   },
 });

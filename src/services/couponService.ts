@@ -1,5 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { Coupon } from '../types/database.types';
+import { cachedQuery } from './cacheService';
+
+const COUPON_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 
 export interface CouponValidationResult {
   valid: boolean;
@@ -10,35 +13,37 @@ export interface CouponValidationResult {
 
 // Fetch all active, valid coupons from Supabase public.coupons table
 export async function fetchActiveCoupons(): Promise<Coupon[]> {
-  try {
-    const { data, error } = await supabase
-      .from('coupons')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+  return cachedQuery('storefront_active_coupons', COUPON_CACHE_TTL, async () => {
+    try {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.warn('Error fetching active coupons from database:', error.message);
+      if (error) {
+        console.warn('Error fetching active coupons from database:', error.message);
+        return [];
+      }
+
+      if (!data || data.length === 0) {
+        return [];
+      }
+
+      // Filter unexpired and active coupons client-side
+      const now = new Date();
+      const validCoupons = data.filter((c: Coupon) => {
+        if (c.starts_at && new Date(c.starts_at) > now) return false;
+        if (c.expires_at && new Date(c.expires_at) < now) return false;
+        return true;
+      });
+
+      return validCoupons;
+    } catch (err) {
+      console.error('Error fetching active coupons:', err);
       return [];
     }
-
-    if (!data || data.length === 0) {
-      return [];
-    }
-
-    // Filter unexpired and active coupons client-side
-    const now = new Date();
-    const validCoupons = data.filter((c: Coupon) => {
-      if (c.starts_at && new Date(c.starts_at) > now) return false;
-      if (c.expires_at && new Date(c.expires_at) < now) return false;
-      return true;
-    });
-
-    return validCoupons;
-  } catch (err) {
-    console.error('Error fetching active coupons:', err);
-    return [];
-  }
+  });
 }
 
 // Record coupon usage in public.coupon_usage table

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { X, Star, AlertCircle, CheckCircle2, ShieldCheck, Lock } from 'lucide-react';
 import { FormattedProduct } from '../types/database.types';
 import { submitReview, checkUserReviewEligibility, ReviewEligibility } from '../services/reviewService';
+import { sanitizeText } from '../utils/sanitize';
 
 interface WriteReviewModalProps {
   product: FormattedProduct;
@@ -48,12 +49,21 @@ export const WriteReviewModal: React.FC<WriteReviewModalProps> = ({
     setLoading(true);
     setError(null);
 
+    const cleanTitle = sanitizeText(title, 120);
+    const cleanComment = sanitizeText(comment, 1500);
+
+    if (!cleanComment) {
+      setError('Please provide feedback comments.');
+      setLoading(false);
+      return;
+    }
+
     try {
       await submitReview({
         product_id: product.id,
         rating,
-        title,
-        comment,
+        title: cleanTitle,
+        comment: cleanComment,
       });
 
       setSuccess(true);

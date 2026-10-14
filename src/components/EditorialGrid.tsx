@@ -52,6 +52,7 @@ export const EditorialGrid: React.FC<EditorialGridProps> = ({ middleBanner }) =>
                 src={mainImage}
                 alt={title || "Campaign Editorial Banner"}
                 loading="lazy"
+                decoding="async"
                 className="w-full h-auto block object-contain transition-transform duration-700 ease-out md:group-hover:scale-[1.01]"
               />
             </picture>

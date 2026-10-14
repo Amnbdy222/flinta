@@ -277,3 +277,17 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* ── RENDERING & SCROLL PERFORMANCE OPTIMIZATIONS ── */
+
+/* Defer rendering of deep offscreen footer until scrolled near */
+footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 450px;
+}
+
+/* Hardware-composited smooth transforms on product cards */
+img {
+  text-indent: -9999px; /* Hides alt text flicker before image loads */
+}
+

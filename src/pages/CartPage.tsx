@@ -146,6 +146,10 @@ export const CartPage: React.FC = () => {
                       <img
                         src={item.image_url}
                         alt={item.product_name}
+                        loading="lazy"
+                        decoding="async"
+                        width="96"
+                        height="128"
                         className="w-20 h-24 sm:w-24 sm:h-32 object-cover object-top bg-[#F0EFEA] hairline-all"
                       />
                     </Link>

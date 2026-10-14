@@ -23,6 +23,11 @@ export const AboutPage: React.FC = () => {
           <img
             src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1600&auto=format&fit=crop"
             alt="FLINT Studio Atelier"
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
+            width="1600"
+            height="900"
             className="w-full h-full object-cover grayscale contrast-105"
           />
         </div>

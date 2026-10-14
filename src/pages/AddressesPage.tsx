@@ -5,6 +5,7 @@ import { EmptyState } from '../components/EmptyState';
 import { lookupPincode } from '../services/pincodeService';
 import { MapPin, Plus, Trash2, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
 import { AccountLayout } from '../components/AccountLayout';
+import { sanitizeText, sanitizePhone, sanitizePincode } from '../utils/sanitize';
 
 export const AddressesPage: React.FC = () => {
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -86,16 +87,30 @@ export const AddressesPage: React.FC = () => {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    const cleanName = sanitizeText(fullName, 100);
+    const cleanPhone = sanitizePhone(phone);
+    const cleanLine1 = sanitizeText(line1, 200);
+    const cleanLine2 = line2.trim() ? sanitizeText(line2, 200) : null;
+    const cleanCity = sanitizeText(city, 80);
+    const cleanState = sanitizeText(state, 80);
+    const cleanPincode = sanitizePincode(pincode);
+
+    if (!cleanName || !cleanPhone || !cleanLine1 || !cleanCity || !cleanState || cleanPincode.length !== 6) {
+      setError('Please provide valid address details (name, 10-digit mobile, address line, city, state, 6-digit PIN code).');
+      return;
+    }
+
     try {
       await createAddress({
-        full_name: fullName,
-        phone,
-        address_line_1: line1,
-        address_line_2: line2 || null,
+        full_name: cleanName,
+        phone: cleanPhone,
+        address_line_1: cleanLine1,
+        address_line_2: cleanLine2,
         landmark: null,
-        city,
-        state,
-        pincode,
+        city: cleanCity,
+        state: cleanState,
+        pincode: cleanPincode,
         is_default: addresses.length === 0,
       });
       setIsAdding(false);
