@@ -1,60 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, ShoppingBag, User, Heart, Menu, X, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, ShoppingBag, User, Heart, Menu, X } from 'lucide-react';
 import { SearchModal } from './SearchModal';
 import { CartDrawer } from './CartDrawer';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuthModal } from '../context/AuthModalContext';
-import { fetchActiveCategories } from '../services/categoryService';
 
-interface NavCategory {
+interface MegaCategoryItem {
   name: string;
-  slug: string;
+  path: string;
+  bold?: boolean;
+  isRed?: boolean;
+  badge?: string;
 }
 
-const DEFAULT_CATEGORIES: NavCategory[] = [
-  { name: 'Shirts', slug: 'shirt' },
-  { name: 'T-Shirts', slug: 't-shirts' },
-  { name: 'Track Pants', slug: 'track-pants' },
-  { name: 'Jeans', slug: 'jeans' },
-  { name: 'Cargo', slug: 'cargo' },
-  { name: 'Hoodies & Jackets', slug: 'hoodies-jackets' },
-  { name: 'Linen Pants', slug: 'linen-pant' },
-  { name: 'Joggers', slug: 'joggers' },
+const CATEGORY_COLUMNS: MegaCategoryItem[][] = [
+  // Column 1
+  [
+    { name: 'ALL', path: '/shop', bold: true },
+    { name: 'OUTERWEAR', path: '/shop?category=hoodies-jackets' },
+    { name: 'JEANS', path: '/shop?category=jeans' },
+    { name: 'CARGO PANTS', path: '/shop?category=cargo' },
+    { name: 'OVERSHIRTS', path: '/shop?category=shirt' },
+    { name: 'ACCESSORIES', path: '/shop?category=accessories' },
+    { name: 'SUNGLASSES', path: '/shop?category=sunglasses', badge: 'AT ₹ 999' },
+    { name: 'FLINT PLUS', path: '/shop?size=XL', badge: '3XL - 6XL' },
+    { name: 'PRICE DROP', path: '/shop?sort=price_low_high', isRed: true },
+  ],
+  // Column 2
+  [
+    { name: 'SHOP ALL', path: '/shop' },
+    { name: 'SHIRTS', path: '/shop?category=shirt' },
+    { name: 'TROUSERS', path: '/shop?category=track-pants' },
+    { name: 'JOGGERS', path: '/shop?category=joggers' },
+    { name: 'LUGGAGE', path: '/shop?category=luggage' },
+    { name: 'BAGS', path: '/shop?category=bags' },
+    { name: 'LINEN EDIT', path: '/shop?category=linen-pant' },
+    { name: 'FLINT LUXE', path: '/shop?sort=price_high_low', badge: 'PREMIUM' },
+    { name: 'FESTIVE EDIT', path: '/shop?category=festive' },
+  ],
+  // Column 3
+  [
+    { name: 'BESTSELLERS', path: '/shop?sort=bestseller' },
+    { name: 'T-SHIRTS | POLO', path: '/shop?category=t-shirts' },
+    { name: 'FOOTWEAR', path: '/shop?category=footwear' },
+    { name: 'SHORTS', path: '/shop?category=shorts' },
+    { name: 'PERFUMES', path: '/shop?category=perfumes', badge: 'FLAT 50% OFF' },
+    { name: 'BELTS', path: '/shop?category=belts' },
+    { name: 'BASICS | CORE LAB', path: '/shop?category=basics' },
+    { name: 'CELEB COLLABS', path: '/shop?category=collabs' },
+  ],
 ];
 
 export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
-  const [categories, setCategories] = useState<NavCategory[]>(DEFAULT_CATEGORIES);
 
   const { itemCount, openCart } = useCart();
   const { user } = useAuth();
   const { wishlistCount } = useWishlist();
   const { openAuthModal } = useAuthModal();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  // Load real active categories from Supabase
-  useEffect(() => {
-    let isMounted = true;
-    fetchActiveCategories().then((cats) => {
-      if (!isMounted) return;
-      if (cats && cats.length > 0) {
-        const mapped = cats.map((c) => ({ name: c.name, slug: c.slug }));
-        // Ensure joggers is included if present in catalog
-        if (!mapped.some((c) => c.slug === 'joggers')) {
-          mapped.push({ name: 'Joggers', slug: 'joggers' });
-        }
-        setCategories(mapped);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const handleAccountClick = (e: React.MouseEvent) => {
     if (!user) {
@@ -178,20 +186,20 @@ export const Header: React.FC = () => {
       {/* CART SLIDE-IN DRAWER */}
       <CartDrawer />
 
-      {/* SIDE NAVIGATION DRAWER WITH FULL CATEGORY ARCHIVE */}
+      {/* SNITCH-STYLE MEGA CATEGORY DRAWER */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 flex">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-[#0A0A0A]/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-[#0A0A0A]/50 backdrop-blur-xs transition-opacity animate-fade-in"
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden="true"
           />
 
           {/* Drawer Panel */}
-          <div className="relative w-[85vw] max-w-sm bg-[#FAF9F6] h-full shadow-2xl flex flex-col justify-between z-10 animate-fade-in">
+          <div className="relative w-full max-w-sm sm:max-w-xl md:max-w-2xl lg:max-w-3xl bg-white h-full shadow-2xl flex flex-col justify-between z-10 animate-fade-in overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-5 hairline-b shrink-0">
+            <div className="flex items-center justify-between px-6 py-5 border-b border-[#EAE8E2] shrink-0 bg-white">
               <Link
                 to="/"
                 onClick={() => setMobileMenuOpen(false)}
@@ -216,114 +224,82 @@ export const Header: React.FC = () => {
               </button>
             </div>
 
-            {/* Scrollable Nav links */}
-            <nav
-              className="flex-1 px-6 pt-5 pb-4 flex flex-col space-y-1 overflow-y-auto no-scrollbar"
-              aria-label="Navigation Menu"
-            >
-              {/* PRIMARY LINKS */}
-              <Link
-                to="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center py-3 text-xs font-medium tracking-[0.25em] hover:opacity-60 uppercase hairline-b ${
-                  location.pathname === '/' ? 'text-[#0A0A0A] font-bold' : 'text-[#383531]'
-                }`}
-              >
-                HOME
-              </Link>
-
-              <Link
-                to="/shop"
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center justify-between py-3 text-xs font-medium tracking-[0.25em] hover:opacity-60 uppercase hairline-b ${
-                  location.pathname === '/shop' && !location.search
-                    ? 'text-[#0A0A0A] font-bold'
-                    : 'text-[#383531]'
-                }`}
-              >
-                <span>SHOP ALL</span>
-                <span className="text-[10px] text-[#736E65] tracking-widest font-normal">
-                  ALL GARMENTS
-                </span>
-              </Link>
-
-              {/* ALL CATEGORIES SECTION */}
-              <div className="pt-3 pb-2">
-                <div className="flex items-center justify-between py-1.5 text-[10px] font-bold tracking-[0.25em] uppercase text-[#736E65]">
-                  <span>CATEGORIES</span>
-                  <span className="text-[9px] bg-[#EAE8E2] px-1.5 py-0.5 text-[#0A0A0A] font-semibold">
-                    {categories.length}
-                  </span>
-                </div>
-
-                <div className="pl-2 space-y-0.5 border-l-2 border-[#0A0A0A]/10 mt-1.5 mb-2">
-                  {categories.map((cat) => {
-                    const isCatActive =
-                      location.pathname === '/shop' &&
-                      location.search.includes(`category=${cat.slug}`);
-                    return (
-                      <Link
-                        key={cat.slug}
-                        to={`/shop?category=${cat.slug}`}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center justify-between py-2 text-[11px] tracking-[0.2em] uppercase transition-colors group ${
-                          isCatActive
-                            ? 'text-[#0A0A0A] font-bold'
-                            : 'text-[#524E48] hover:text-[#0A0A0A]'
-                        }`}
-                      >
-                        <span className="group-hover:translate-x-1 transition-transform">
-                          {cat.name}
-                        </span>
-                        <ChevronRight
-                          size={13}
-                          className="text-[#A39E93] group-hover:text-[#0A0A0A] transition-colors"
-                        />
-                      </Link>
-                    );
-                  })}
-                </div>
+            {/* Scrollable Category Grid Body */}
+            <div className="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto no-scrollbar space-y-6 bg-white">
+              {/* 3-COLUMN CATEGORY GRID (EXACT SNITCH REPLICA) */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-8 md:gap-x-12 gap-y-4 sm:gap-y-5">
+                {CATEGORY_COLUMNS.map((col, colIdx) => (
+                  <div key={colIdx} className="space-y-3.5 sm:space-y-4">
+                    {col.map((item, itemIdx) => (
+                      <div key={itemIdx}>
+                        <Link
+                          to={item.path}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`inline-flex items-center flex-wrap gap-1.5 py-0.5 text-xs sm:text-[13px] md:text-sm tracking-tight uppercase hover:opacity-60 transition-opacity ${
+                            item.bold
+                              ? 'font-extrabold text-[#0A0A0A]'
+                              : item.isRed
+                              ? 'text-[#8E1C20] font-semibold'
+                              : 'text-[#0A0A0A] font-normal'
+                          }`}
+                        >
+                          <span>{item.name}</span>
+                          {item.badge && (
+                            <span className="bg-[#78181C] text-white text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 tracking-wider rounded-none shrink-0 uppercase leading-none">
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
 
-              {/* SECONDARY LINKS */}
-              <Link
-                to="/about"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center py-3 text-xs font-medium tracking-[0.25em] text-[#383531] hover:opacity-60 uppercase hairline-b"
-              >
-                ABOUT
-              </Link>
-
-              <Link
-                to="/wishlist"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between py-3 text-xs font-medium tracking-[0.25em] text-[#0A0A0A] hover:opacity-60 uppercase hairline-b"
-              >
-                <span>WISHLIST</span>
-                {wishlistCount > 0 && (
-                  <span className="badge-editorial">{wishlistCount}</span>
-                )}
-              </Link>
-
-              <Link
-                to={user ? '/account' : '#'}
-                onClick={(e) => {
-                  setMobileMenuOpen(false);
-                  handleAccountClick(e);
-                }}
-                className="flex items-center justify-between py-3 text-xs font-medium tracking-[0.25em] text-[#0A0A0A] hover:opacity-60 uppercase"
-              >
-                <span>{user ? 'ACCOUNT PORTAL' : 'CLIENT LOGIN'}</span>
-                {user && (
-                  <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" />
-                )}
-              </Link>
-            </nav>
+              {/* QUICK UTILITY PORTAL BAR */}
+              <div className="pt-6 border-t border-[#EAE8E2] grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs tracking-wider uppercase font-semibold text-[#0A0A0A]">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:opacity-60 py-1"
+                >
+                  HOME
+                </Link>
+                <Link
+                  to="/about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:opacity-60 py-1"
+                >
+                  ABOUT
+                </Link>
+                <Link
+                  to="/wishlist"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:opacity-60 py-1 flex items-center space-x-1.5"
+                >
+                  <span>WISHLIST</span>
+                  {wishlistCount > 0 && (
+                    <span className="badge-editorial text-[9px]">{wishlistCount}</span>
+                  )}
+                </Link>
+                <Link
+                  to={user ? '/account' : '#'}
+                  onClick={(e) => {
+                    setMobileMenuOpen(false);
+                    handleAccountClick(e);
+                  }}
+                  className="hover:opacity-60 py-1 flex items-center space-x-1.5"
+                >
+                  <span>{user ? 'ACCOUNT PORTAL' : 'CLIENT LOGIN'}</span>
+                  {user && <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full" />}
+                </Link>
+              </div>
+            </div>
 
             {/* Footer */}
-            <div className="px-6 py-5 hairline-t space-y-2.5 text-[0.65rem] tracking-widest text-[#736E65] shrink-0 bg-[#FAF9F6]">
+            <div className="px-6 py-4 border-t border-[#EAE8E2] flex flex-wrap items-center justify-between gap-3 text-[10px] tracking-widest text-[#736E65] shrink-0 bg-[#FAF9F6]">
               <p>© FLINT ARCHIVE. ALL RIGHTS RESERVED.</p>
-              <div className="flex space-x-6">
+              <div className="flex space-x-5">
                 <Link
                   to="/contact"
                   onClick={() => setMobileMenuOpen(false)}
