@@ -183,11 +183,49 @@ export const ShopPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Dynamic SEO based on active Category or Search query
+  const getShopSeo = () => {
+    if (searchQuery) {
+      return {
+        title: `Search: "${searchQuery}"`,
+        description: `Browse luxury garment search results for "${searchQuery}" in the FLINT A archive.`,
+        breadcrumbs: [
+          { name: 'Home', url: '/' },
+          { name: 'Shop', url: '/shop' },
+          { name: `Search: ${searchQuery}`, url: `/shop?q=${encodeURIComponent(searchQuery)}` },
+        ],
+      };
+    }
+    if (category) {
+      const formattedCat = category.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+      return {
+        title: `${formattedCat} Collection — Designer Men's ${formattedCat}`,
+        description: `Explore the FLINT A luxury ${formattedCat} collection. Precision tailoring, premium heavyweight textiles, and minimalist silhouettes. Complimentary shipping across India.`,
+        breadcrumbs: [
+          { name: 'Home', url: '/' },
+          { name: 'Shop', url: '/shop' },
+          { name: formattedCat, url: `/shop?category=${encodeURIComponent(category)}` },
+        ],
+      };
+    }
+    return {
+      title: 'Shop All Luxury Streetwear & Designer Apparel',
+      description: 'Explore the full FLINT A garment archive catalog. Premium heavyweight cotton, tailored trousers, and minimalist silhouettes. Free shipping across India.',
+      breadcrumbs: [
+        { name: 'Home', url: '/' },
+        { name: 'Shop', url: '/shop' },
+      ],
+    };
+  };
+
+  const seoData = getShopSeo();
+
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-6 sm:pt-8 pb-16 md:pb-24 text-[#0A0A0A]">
       <SEO
-        title="Archive Catalogue"
-        description="Explore the full FLINT garment archive catalog. Premium heavyweight cotton, tailored trousers, and minimalist silhouettes."
+        title={seoData.title}
+        description={seoData.description}
+        breadcrumbs={seoData.breadcrumbs}
       />
 
       {/* CATEGORY BANNER HEADER */}

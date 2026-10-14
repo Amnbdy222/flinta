@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { fetchOrderDetail, formatOrderNumber } from '../services/orderService';
 import { Order } from '../types/database.types';
 import { EmptyState } from '../components/EmptyState';
+import { SEO } from '../components/SEO';
 import { Package, MapPin, ArrowRight } from 'lucide-react';
 
 export const OrderSuccessPage: React.FC = () => {
@@ -62,6 +63,7 @@ export const OrderSuccessPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-20 sm:pt-24 md:pt-32 pb-16 md:pb-24 text-[#0A0A0A]">
+      <SEO title="Order Confirmed" description="Your FLINT A order has been confirmed." noindex />
       <div className="container-editorial max-w-3xl mx-auto space-y-8 sm:space-y-10 md:space-y-12">
 
         {/* SUCCESS BANNER */}

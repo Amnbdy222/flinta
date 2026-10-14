@@ -308,6 +308,7 @@ export const ProductDetailPage: React.FC = () => {
           currency: 'INR',
           inStock: stockState !== 'OUT_OF_STOCK',
           category: product.category,
+          sku: selectedVariant?.sku || product.variants?.[0]?.sku,
         }}
       />
       <div className="container-editorial">

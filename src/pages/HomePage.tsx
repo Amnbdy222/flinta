@@ -91,8 +91,9 @@ export const HomePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAF9F6] text-[#0A0A0A] selection:bg-[#0A0A0A] selection:text-[#FAF9F6]">
       <SEO
-        title="Permanent Form & Silhouette"
-        description="FLINT — High fashion editorial storefront. Minimalist organic textiles, precision tailoring, and timeless garment archives."
+        title="FLINT A | Luxury Streetwear & Contemporary Designer Fashion India"
+        description="Discover FLINT A — Contemporary Indian luxury streetwear, heavyweight oversized t-shirts, minimalist tailored shirts, and architectural garment silhouettes. Free shipping across India."
+        keywords="flint a, luxury streetwear india, oversized t-shirts, high fashion brand india, designer shirts, minimalist streetwear, tailored linen pants, flint clothing"
       />
       {/* 1. ANNOUNCEMENT PROMO BAR & HERO SLIDER */}
       <EditorialHero banners={heroBanners} loading={heroLoading} />

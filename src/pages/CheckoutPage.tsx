@@ -295,6 +295,7 @@ export const CheckoutPage: React.FC = () => {
         title="Secure Checkout"
         description="Complete your order securely with encrypted checkout and express delivery."
         canonicalUrl="https://flintaindia.com/checkout"
+        noindex
       />
       <div className="container-editorial">
         {/* CHECKOUT HEADER */}

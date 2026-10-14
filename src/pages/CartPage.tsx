@@ -97,6 +97,7 @@ export const CartPage: React.FC = () => {
       <SEO
         title="Shopping Bag"
         description="Review your selected luxury garments and proceed to secure checkout."
+        noindex
       />
       <div className="container-editorial">
         {/* PAGE TITLE */}

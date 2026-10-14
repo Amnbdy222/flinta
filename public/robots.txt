@@ -1,0 +1,26 @@
+# https://flintaindia.com robots.txt
+# Strict Search Engine Crawling Guidelines
+
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /products/
+Allow: /product/
+Allow: /about
+Allow: /contact
+Allow: /shipping
+Allow: /returns
+Allow: /terms
+Allow: /privacy
+
+# Disallow private user accounts and checkout transactions
+Disallow: /cart
+Disallow: /checkout
+Disallow: /account/
+Disallow: /orders/
+Disallow: /api/
+Disallow: /.netlify/
+
+# Host and Sitemap
+Host: https://flintaindia.com
+Sitemap: https://flintaindia.com/sitemap.xml

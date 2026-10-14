@@ -61,6 +61,7 @@ export const WishlistPage: React.FC = () => {
       <SEO
         title="Saved Garments Wishlist"
         description="Your saved luxury fashion garments and curated pieces."
+        noindex
       />
       <div className="container-editorial max-w-6xl mx-auto">{content}</div>
     </div>

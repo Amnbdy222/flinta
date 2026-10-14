@@ -48,7 +48,7 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] pt-2 sm:pt-6 md:pt-8 pb-12 sm:pb-16 md:pb-24 text-[#0A0A0A]">
-      <SEO title={title} description={description} />
+      <SEO title={title} description={description} noindex />
 
       <div className="container-editorial max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
         {/* TOP HEADER — account title (compact on mobile, editorial on desktop) */}
