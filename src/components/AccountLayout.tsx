@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { ChevronRight, LogOut, AlertTriangle, X } from 'lucide-react';
+import { ChevronLeft, LogOut, AlertTriangle, X } from 'lucide-react';
 import { SEO } from './SEO';
 
 export type AccountTabKey =
@@ -37,34 +37,45 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
   };
 
   const navMenuItems = [
-    { key: 'overview', label: 'OVERVIEW', path: '/account' },
-    { key: 'profile', label: 'PROFILE', path: '/account?tab=profile' },
     { key: 'orders', label: 'ORDERS', path: '/account/orders' },
+    { key: 'returns', label: 'REFUNDS', path: '/account/returns' },
     { key: 'wishlist', label: 'WISHLIST', path: '/wishlist' },
-    { key: 'addresses', label: 'ADDRESSES', path: '/account/addresses' },
-    { key: 'returns', label: 'REFUNDS & RETURNS', path: '/account/returns' },
-    { key: 'contact', label: 'CLIENT HELP', path: '/contact' },
+    { key: 'addresses', label: 'SAVED ADDRESSES', path: '/account/addresses' },
+    { key: 'contact', label: 'HELP & SUPPORT', path: '/contact' },
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] pt-2 sm:pt-6 md:pt-8 pb-12 sm:pb-16 md:pb-24 text-[#0A0A0A]">
+    <div className="min-h-screen bg-[#FAF9F6] text-[#0A0A0A] pt-4 sm:pt-6 pb-16 sm:pb-24">
       <SEO title={title} description={description} noindex />
 
-      <div className="container-editorial max-w-6xl mx-auto px-3 sm:px-4 md:px-6">
-        {/* TOP HEADER — account title (compact on mobile, editorial on desktop) */}
-        <div className="py-2.5 sm:py-4 hairline-b mb-0">
-          <span className="text-[0.6rem] sm:text-[0.65rem] font-medium tracking-[0.25em] uppercase text-[#736E65]">
-            CLIENT PORTAL
-          </span>
-          <h1 className="font-editorial text-lg sm:text-2xl md:text-3xl font-light uppercase tracking-tight text-[#0A0A0A] leading-tight">
-            MY ACCOUNT
-          </h1>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        {/* TOP BAR: BACK TO ACCOUNT & LOG OUT */}
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[#EAE8E2] mb-5 sm:mb-6">
+          <Link
+            to="/account"
+            className="inline-flex items-center text-xs tracking-wider uppercase text-[#736E65] hover:text-[#0A0A0A] transition-colors group"
+          >
+            <ChevronLeft
+              size={16}
+              className="mr-1 group-hover:-translate-x-0.5 transition-transform"
+            />
+            <span>BACK TO ACCOUNT</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setShowLogoutModal(true)}
+            className="inline-flex items-center text-xs tracking-wider uppercase text-red-700 hover:text-red-900 transition-colors cursor-pointer"
+          >
+            <LogOut size={13} className="mr-1.5" />
+            <span>LOG OUT</span>
+          </button>
         </div>
 
-        {/* MOBILE HORIZONTAL SCROLLABLE NAV */}
+        {/* HORIZONTAL PILL SWITCHER TABS (CLEAN HIGH-FASHION NAVIGATION) */}
         <nav
-          className="lg:hidden flex overflow-x-auto no-scrollbar hairline-b bg-white -mx-3 px-3 sm:mx-0 sm:px-0 items-center"
-          aria-label="Account navigation"
+          className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 mb-6 sm:mb-8"
+          aria-label="Account Sub-navigation"
         >
           {navMenuItems.map((item) => {
             const isActive = activeKey === item.key;
@@ -72,75 +83,31 @@ export const AccountLayout: React.FC<AccountLayoutProps> = ({
               <Link
                 key={item.key}
                 to={item.path}
-                className={`flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 text-[0.6rem] sm:text-[0.65rem] tracking-[0.18em] font-medium uppercase whitespace-nowrap border-b-2 transition-colors ${
+                className={`shrink-0 px-3.5 sm:px-4 py-2 text-[11px] sm:text-xs font-semibold tracking-wider uppercase transition-all shadow-xs ${
                   isActive
-                    ? 'border-[#0A0A0A] text-[#0A0A0A]'
-                    : 'border-transparent text-[#736E65] hover:text-[#0A0A0A]'
+                    ? 'bg-[#0A0A0A] text-white'
+                    : 'bg-white text-[#736E65] hover:text-[#0A0A0A] border border-[#EAE8E2] hover:border-gray-400'
                 }`}
               >
                 {item.label}
               </Link>
             );
           })}
-          <button
-            type="button"
-            onClick={() => setShowLogoutModal(true)}
-            className="flex-shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 text-[0.6rem] sm:text-[0.65rem] tracking-[0.18em] font-medium uppercase whitespace-nowrap text-red-700 hover:text-red-900 border-b-2 border-transparent flex items-center space-x-1 cursor-pointer"
-          >
-            <LogOut size={12} className="inline mr-1 shrink-0" />
-            <span>LOG OUT</span>
-          </button>
         </nav>
 
-        {/* DESKTOP 2-COLUMN LAYOUT */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-0 lg:gap-8 items-start pt-3 sm:pt-6 lg:pt-8">
-          {/* DESKTOP STICKY LEFT SIDEBAR */}
-          <aside className="hidden lg:block lg:col-span-1 lg:sticky lg:top-24 bg-white hairline-all shadow-xs">
-            <nav className="flex flex-col p-2" aria-label="Account sidebar navigation">
-              {navMenuItems.map((item) => {
-                const isActive = activeKey === item.key;
-                return (
-                  <Link
-                    key={item.key}
-                    to={item.path}
-                    className={`flex items-center justify-between px-4 py-3 text-xs tracking-[0.2em] font-medium uppercase transition-colors ${
-                      isActive
-                        ? 'bg-[#0A0A0A] text-[#FAF9F6]'
-                        : 'text-[#383531] hover:bg-[#FAF9F6] hover:text-[#0A0A0A]'
-                    }`}
-                  >
-                    <span>{item.label}</span>
-                    <ChevronRight size={14} className={isActive ? 'text-[#FAF9F6]' : 'text-[#A39E93]'} />
-                  </Link>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setShowLogoutModal(true)}
-                className="flex items-center justify-between px-4 py-3 text-xs tracking-[0.2em] font-medium uppercase text-red-700 hover:bg-red-50 transition-colors text-left hairline-t mt-1 cursor-pointer w-full"
-              >
-                <span>LOG OUT</span>
-                <LogOut size={14} />
-              </button>
-            </nav>
-          </aside>
-
-          {/* MAIN CONTENT */}
-          <main className="lg:col-span-3 min-w-0">{children}</main>
-        </div>
+        {/* MAIN FOCUSED CONTENT CONTAINER */}
+        <main className="w-full">{children}</main>
       </div>
 
       {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div
             className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-xs transition-opacity animate-fade-in"
             onClick={() => setShowLogoutModal(false)}
             aria-hidden="true"
           />
 
-          {/* Modal Dialog Card */}
           <div className="relative bg-[#FAF9F6] border border-[#0A0A0A]/20 p-6 sm:p-8 max-w-md w-full shadow-2xl z-10 space-y-6 animate-fade-in">
             <button
               type="button"

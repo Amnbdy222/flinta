@@ -142,10 +142,12 @@ export const AddressesPage: React.FC = () => {
       <div className="space-y-4 sm:space-y-6">
 
         {/* HEADER */}
-        <div className="bg-white p-4 sm:p-6 hairline-all flex flex-col sm:flex-row justify-between sm:items-center gap-3 sm:gap-4">
+        <div className="bg-white border border-[#EAE8E2] p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-3 sm:gap-4">
           <div>
-            <span className="editorial-subtitle block">DISPATCH LOCATIONS</span>
-            <h1 className="font-editorial text-xl sm:text-2xl md:text-3xl font-light uppercase tracking-tight mt-0.5">
+            <span className="text-[10px] tracking-widest uppercase font-semibold text-[#736E65] block">
+              DISPATCH LOCATIONS
+            </span>
+            <h1 className="font-editorial text-2xl sm:text-3xl font-light uppercase tracking-tight text-[#0A0A0A] mt-0.5">
               SAVED ADDRESSES ({addresses.length})
             </h1>
           </div>
@@ -354,7 +356,7 @@ export const AddressesPage: React.FC = () => {
             {addresses.map((addr) => (
               <div
                 key={addr.id}
-                className="bg-white p-4 sm:p-5 md:p-6 hairline-all flex flex-col justify-between space-y-3 hover:border-[#0A0A0A] transition-colors"
+                className="bg-white p-4 sm:p-5 md:p-6 border border-[#EAE8E2] shadow-xs flex flex-col justify-between space-y-3 hover:border-[#0A0A0A] transition-colors"
               >
                 <div className="space-y-1.5 sm:space-y-2">
                   <div className="flex items-start justify-between gap-2">

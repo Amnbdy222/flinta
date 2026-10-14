@@ -74,44 +74,48 @@ export const OrdersListPage: React.FC = () => {
 
   return (
     <AccountLayout activeKey="orders" title="My Orders Archive">
-      <div className="space-y-6">
-        {/* PAGE TITLE */}
-        <div className="pb-6 hairline-b flex flex-col sm:flex-row justify-between sm:items-center gap-4 bg-white p-6 hairline-all">
+      <div className="space-y-4 sm:space-y-6">
+        {/* PAGE HEADER */}
+        <div className="bg-white border border-[#EAE8E2] p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row justify-between sm:items-center gap-4">
           <div>
-            <span className="editorial-subtitle block">PURCHASE ARCHIVE</span>
-            <h1 className="font-editorial text-2xl sm:text-3xl font-light uppercase tracking-tight mt-0.5">
+            <span className="text-[10px] tracking-widest uppercase font-semibold text-[#736E65] block">
+              PURCHASE ARCHIVE
+            </span>
+            <h1 className="font-editorial text-2xl sm:text-3xl font-light uppercase tracking-tight text-[#0A0A0A] mt-0.5">
               MY ORDERS ({orders.length})
             </h1>
           </div>
           <Link
             to="/account/returns"
-            className="btn-editorial-outline text-xs py-2.5 px-4 sm:px-5 inline-flex items-center space-x-2 self-start sm:self-auto shrink-0"
+            className="btn-editorial-outline text-xs py-2 px-4 sm:px-5 inline-flex items-center space-x-2 self-start sm:self-auto shrink-0 cursor-pointer"
           >
             <RotateCcw size={13} />
-            <span>RETURNS HUB</span>
+            <span>REFUNDS &amp; RETURNS</span>
           </Link>
         </div>
 
         {/* CONTENT */}
         {loading ? (
-          <div className="py-16 sm:py-20 text-center text-xs tracking-widest uppercase text-[#736E65] bg-white hairline-all">
+          <div className="py-16 sm:py-20 text-center text-xs tracking-widest uppercase text-[#736E65] bg-white border border-[#EAE8E2] shadow-xs">
             RETRIEVING ORDER ARCHIVE...
           </div>
         ) : error ? (
-          <div className="bg-white p-6 hairline-all">
-            <ErrorState title="ORDERS UNAVAILABLE" message="Failed to load orders." onRetry={loadOrders} />
+          <div className="bg-white p-6 border border-[#EAE8E2] shadow-xs">
+            <ErrorState
+              title="ORDERS UNAVAILABLE"
+              message="Failed to load orders."
+              onRetry={loadOrders}
+            />
           </div>
         ) : orders.length === 0 ? (
-          <div className="bg-white py-6 sm:py-10 px-4 hairline-all">
-            <EmptyState
-              type="orders"
-              actionPath="/shop"
-            />
+          <div className="bg-white py-8 sm:py-12 px-4 border border-[#EAE8E2] shadow-xs">
+            <EmptyState type="orders" actionPath="/shop" />
           </div>
         ) : (
           <div className="space-y-4">
             {orders.map((order) => {
-              const itemCount = order.order_items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+              const itemCount =
+                order.order_items?.reduce((acc, item) => acc + item.quantity, 0) || 0;
               const formattedDate = new Date(order.created_at).toLocaleDateString('en-IN', {
                 year: 'numeric',
                 month: 'short',
@@ -124,11 +128,11 @@ export const OrdersListPage: React.FC = () => {
               return (
                 <div
                   key={order.id}
-                  className="bg-white hairline-all hover:border-[#0A0A0A] transition-colors overflow-hidden"
+                  className="bg-white border border-[#EAE8E2] shadow-xs hover:border-[#0A0A0A] transition-colors overflow-hidden"
                 >
                   {/* ORDER HEADER */}
-                  <div className="p-4 sm:p-6 bg-[#FAF9F6] hairline-b flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex items-center space-x-3">
+                  <div className="p-4 sm:p-5 bg-[#FAF9F6] border-b border-[#EAE8E2] flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center space-x-3.5">
                       {order.order_items && order.order_items[0]?.image_url ? (
                         <img
                           src={order.order_items[0].image_url}
@@ -164,18 +168,21 @@ export const OrdersListPage: React.FC = () => {
                         TOTAL
                       </span>
                       <span className="font-editorial text-lg font-light text-[#0A0A0A]">
-                        {settings.currency_symbol}{Number(order.total_amount).toFixed(2)}
+                        {settings.currency_symbol}
+                        {Number(order.total_amount).toFixed(2)}
                       </span>
                     </div>
                   </div>
 
                   {/* ACTIVE RETURN / EXCHANGE BADGES */}
                   {(activeReturn || activeExchange) && (
-                    <div className="px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-900 text-xs flex items-center justify-between">
+                    <div className="px-5 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-amber-900 text-xs flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <RotateCcw size={14} className="shrink-0" />
                         <span className="font-medium">
-                          {activeReturn ? `Return Requested (${activeReturn.status.toUpperCase()})` : `Exchange Requested (${activeExchange?.status.toUpperCase()})`}
+                          {activeReturn
+                            ? `Return Requested (${activeReturn.status.toUpperCase()})`
+                            : `Exchange Requested (${activeExchange?.status.toUpperCase()})`}
                         </span>
                       </div>
                       <Link
@@ -188,7 +195,7 @@ export const OrdersListPage: React.FC = () => {
                   )}
 
                   {/* ACTIONS BAR */}
-                  <div className="p-4 sm:px-6 sm:py-4 flex flex-wrap items-center justify-end gap-2.5 bg-white">
+                  <div className="p-4 sm:px-5 sm:py-3.5 flex flex-wrap items-center justify-end gap-2.5 bg-white">
                     {order.status === 'delivered' && !activeReturn && !activeExchange && (
                       <>
                         <Link
@@ -196,7 +203,7 @@ export const OrdersListPage: React.FC = () => {
                           className="px-3.5 py-2 bg-rose-50 border border-rose-300 text-rose-900 hover:bg-rose-900 hover:text-[#FAF9F6] text-[0.65rem] font-semibold tracking-widest uppercase transition-colors inline-flex items-center space-x-1.5"
                         >
                           <RotateCcw size={12} />
-                          <span>RETURN & REFUND</span>
+                          <span>RETURN &amp; REFUND</span>
                         </Link>
 
                         <Link
@@ -211,9 +218,9 @@ export const OrdersListPage: React.FC = () => {
 
                     <Link
                       to={`/account/orders/${order.id}`}
-                      className="btn-editorial-outline py-2 px-4 text-[0.65rem] tracking-[0.2em] inline-flex items-center space-x-2"
+                      className="btn-editorial-outline py-2 px-4 text-[0.65rem] tracking-[0.2em] inline-flex items-center space-x-2 cursor-pointer"
                     >
-                      <span>VIEW ORDER</span>
+                      <span>VIEW DETAILS</span>
                       <ArrowRight size={13} />
                     </Link>
                   </div>
