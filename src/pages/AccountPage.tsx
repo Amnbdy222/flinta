@@ -15,11 +15,9 @@ import {
   HelpCircle,
   LogOut,
   ChevronRight,
-  Gift,
   X,
   Check,
   AlertCircle,
-  Sparkles,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -35,7 +33,6 @@ export const AccountPage: React.FC = () => {
 
   // Modals
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showBenefitsModal, setShowBenefitsModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Profile form state (strictly initialized from user's real profile)
@@ -103,13 +100,6 @@ export const AccountPage: React.FC = () => {
     return sum + (Number(order.total_amount) || 0);
   }, 0);
 
-  const MEMBERSHIP_THRESHOLD = 5000;
-  const remainingToUnlock = Math.max(0, MEMBERSHIP_THRESHOLD - totalSpent);
-  const progressPercent = Math.min(
-    100,
-    Math.round((totalSpent / MEMBERSHIP_THRESHOLD) * 100)
-  );
-
   const memberSinceFormatted = user?.created_at
     ? new Date(user.created_at).toLocaleDateString('en-IN', {
         month: 'short',
@@ -162,15 +152,14 @@ export const AccountPage: React.FC = () => {
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* ========================================================= */}
-        {/* TOP EDITORIAL BANNER (MATCHES SNITCH ACCOUNT BANNER EXACTLY) */}
+        {/* TOP EDITORIAL BANNER (CLEAN FULL-WIDTH WELCOME)            */}
         {/* ========================================================= */}
         <section
           aria-label="Account Overview Banner"
-          className="bg-white border border-[#EAE8E2] overflow-hidden shadow-xs mb-8 sm:mb-10 flex flex-col md:flex-row"
+          className="bg-white border border-[#EAE8E2] overflow-hidden shadow-xs mb-8 sm:mb-10"
         >
-          {/* LEFT BOX: Welcome + Real Name + Model Photo + Status Pill */}
-          <div className="md:w-1/2 p-5 sm:p-6 md:p-8 flex items-center justify-between relative bg-white overflow-hidden">
-            <div className="space-y-1 z-10 pr-2">
+          <div className="p-6 sm:p-8 md:p-10 flex items-center justify-between relative bg-white overflow-hidden">
+            <div className="space-y-1.5 z-10 pr-4">
               <span className="text-xs sm:text-sm font-light text-[#736E65] tracking-wide block">
                 Welcome
               </span>
@@ -180,10 +169,8 @@ export const AccountPage: React.FC = () => {
 
               {/* Status Pill Badge */}
               <div className="pt-4 sm:pt-6">
-                <span className="inline-flex items-center px-3 py-1 bg-white border border-[#EAE8E2] text-[11px] font-medium tracking-wide text-[#736E65] shadow-xs">
-                  {progressPercent >= 100
-                    ? 'Active VIP Member'
-                    : memberSinceFormatted
+                <span className="inline-flex items-center px-3.5 py-1.5 bg-[#FAF9F6] border border-[#EAE8E2] text-[11px] font-medium tracking-wide text-[#736E65] shadow-xs">
+                  {memberSinceFormatted
                     ? `Member since ${memberSinceFormatted}`
                     : 'Active Client'}
                 </span>
@@ -191,67 +178,13 @@ export const AccountPage: React.FC = () => {
             </div>
 
             {/* Editorial Model Image */}
-            <div className="relative shrink-0 w-32 sm:w-40 md:w-44 h-36 sm:h-44 md:h-48 overflow-hidden">
+            <div className="relative shrink-0 w-36 sm:w-48 md:w-56 h-36 sm:h-44 md:h-52 overflow-hidden">
               <img
                 src="/images/account_banner_model.jpg"
                 alt="FLINT Member Lifestyle"
                 className="w-full h-full object-cover object-top select-none pointer-events-none"
                 loading="eager"
               />
-            </div>
-          </div>
-
-          {/* RIGHT BOX: Charcoal Banner + FLINTX Brand + View Benefits + Progress Line */}
-          <div className="md:w-1/2 bg-[#383838] p-5 sm:p-6 md:p-8 flex flex-col justify-between text-white border-t md:border-t-0 md:border-l border-[#454545]">
-            {/* Top row: Spend to unlock headline & FLINTX logo badge */}
-            <div>
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-xs sm:text-[13px] font-semibold tracking-wider uppercase text-gray-200 leading-snug">
-                  SPEND MORE TO UNLOCK MEMBERSHIP
-                </p>
-                <div className="shrink-0 tracking-widest text-right">
-                  <span className="text-sm sm:text-base font-black text-white">FLINT</span>
-                  <span className="text-sm sm:text-base font-black text-[#D4AF37]">X</span>
-                </div>
-              </div>
-
-              {/* View Benefits Button */}
-              <div className="mt-3 sm:mt-3.5">
-                <button
-                  type="button"
-                  onClick={() => setShowBenefitsModal(true)}
-                  className="inline-flex items-center px-3.5 py-1.5 sm:px-4 sm:py-2 bg-white text-[#0A0A0A] text-[10px] sm:text-xs font-bold tracking-wider uppercase hover:bg-gray-100 transition-colors cursor-pointer shadow-xs"
-                >
-                  VIEW BENEFITS
-                </button>
-              </div>
-            </div>
-
-            {/* Bottom: Progress Bar with Gift Icon & Real Spent Subtext */}
-            <div className="mt-6 pt-2">
-              <div className="relative flex items-center">
-                <div className="w-full bg-[#525252] h-[2px] relative overflow-hidden">
-                  <div
-                    className="bg-white h-full transition-all duration-700 ease-out"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowBenefitsModal(true)}
-                  className="ml-2.5 shrink-0 w-7 h-7 rounded-full bg-[#2A2A2A] border border-gray-500/80 flex items-center justify-center text-amber-300 hover:text-white hover:border-white transition-all cursor-pointer shadow-xs"
-                  title="View FLINTX Rewards"
-                >
-                  <Gift size={13} strokeWidth={2} />
-                </button>
-              </div>
-
-              {/* Subtext based strictly on user's real spent data */}
-              <p className="text-[11px] sm:text-xs text-gray-300 font-light mt-2 tracking-wide">
-                {progressPercent >= 100
-                  ? `Membership Unlocked • ₹${totalSpent.toLocaleString('en-IN')} Spent`
-                  : `Spend ₹${remainingToUnlock.toLocaleString('en-IN')} to unlock.`}
-              </p>
             </div>
           </div>
         </section>
@@ -547,114 +480,6 @@ export const AccountPage: React.FC = () => {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* FLINTX MEMBERSHIP BENEFITS MODAL                         */}
-      {/* ========================================================= */}
-      {showBenefitsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-[#0A0A0A]/60 backdrop-blur-xs transition-opacity animate-fade-in"
-            onClick={() => setShowBenefitsModal(false)}
-            aria-hidden="true"
-          />
-
-          <div className="relative bg-[#FAF9F6] border border-[#0A0A0A]/20 p-6 sm:p-8 max-w-lg w-full shadow-2xl z-10 space-y-6 animate-fade-in max-h-[90vh] overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => setShowBenefitsModal(false)}
-              className="absolute top-4 right-4 p-1 text-[#736E65] hover:text-[#0A0A0A] focus:outline-none"
-              aria-label="Close benefits modal"
-            >
-              <X size={20} />
-            </button>
-
-            <div className="space-y-1">
-              <div className="flex items-center space-x-2 text-[#736E65] text-[10px] tracking-widest uppercase">
-                <Sparkles size={14} className="text-[#D4AF37]" />
-                <span>FLINTX PRIVILEGES</span>
-              </div>
-              <h3 className="font-editorial text-2xl sm:text-3xl font-light uppercase tracking-tight text-[#0A0A0A]">
-                TIER BENEFITS
-              </h3>
-              <p className="text-xs text-[#736E65] font-light leading-relaxed">
-                Spend ₹{MEMBERSHIP_THRESHOLD.toLocaleString('en-IN')} across any garment orders to unlock exclusive lifetime perks.
-              </p>
-            </div>
-
-            {/* REAL USER SPENT STATUS */}
-            <div className="bg-[#383838] text-white p-5 space-y-3">
-              <div className="flex items-center justify-between text-xs tracking-wider uppercase font-semibold">
-                <span>YOUR SPEND PROGRESS</span>
-                <span className="text-[#D4AF37]">
-                  ₹{totalSpent.toLocaleString('en-IN')} / ₹{MEMBERSHIP_THRESHOLD.toLocaleString('en-IN')}
-                </span>
-              </div>
-              <div className="w-full bg-[#525252] h-[3px] overflow-hidden">
-                <div
-                  className="bg-[#D4AF37] h-full transition-all duration-700"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <p className="text-[11px] text-gray-300 font-light">
-                {progressPercent >= 100
-                  ? 'Congratulations! You have unlocked all FLINTX Gold privileges.'
-                  : `Spend ₹${remainingToUnlock.toLocaleString('en-IN')} more to unlock FLINTX Gold status.`}
-              </p>
-            </div>
-
-            {/* PRIVILEGES LIST */}
-            <div className="space-y-3.5 pt-1">
-              {[
-                {
-                  title: 'Free Priority Express Delivery',
-                  desc: 'Complimentary expedited insured shipping on every order across India with zero minimum cart value.',
-                },
-                {
-                  title: 'Early Drop & Archival Access',
-                  desc: 'Get exclusive 24-hour advance access to limited garment drops, runway editions, and archival sales.',
-                },
-                {
-                  title: 'Instant 7-Day Reverse Pickup',
-                  desc: 'Hassle-free doorstep exchanges and returns with instant refunds initiated upon handover.',
-                },
-                {
-                  title: 'Personal Styling Concierge',
-                  desc: 'Direct WhatsApp and email consultation with FLINT creative stylists for custom fits and tailoring advice.',
-                },
-                {
-                  title: 'Birthday Gift & Secret Drops',
-                  desc: 'An annual complimentary store token and invitation to private members-only trunk presentations.',
-                },
-              ].map((perk, idx) => (
-                <div key={idx} className="flex items-start space-x-3 text-left">
-                  <div className="p-1 bg-[#0A0A0A] text-white shrink-0 mt-0.5">
-                    <Check size={12} strokeWidth={2.5} />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-[#0A0A0A]">
-                      {perk.title}
-                    </h4>
-                    <p className="text-[11px] text-[#736E65] font-light leading-relaxed pt-0.5">
-                      {perk.desc}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setShowBenefitsModal(false)}
-                className="btn-editorial-primary w-full py-3 text-xs tracking-[0.2em] cursor-pointer"
-              >
-                GOT IT
-              </button>
-            </div>
           </div>
         </div>
       )}
