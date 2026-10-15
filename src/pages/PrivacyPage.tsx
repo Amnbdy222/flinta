@@ -415,18 +415,22 @@ export const PrivacyPage: React.FC = () => {
                       {settings.support_email || 'support@flintaindia.com'}
                     </a>
                   </div>
-                  <div>
-                    <span className="text-[0.68rem] font-semibold text-[#0A0A0A] block uppercase tracking-wider mb-0.5">
-                      CONCIERGE HELPLINE
-                    </span>
-                    <p>{settings.support_phone || '+91 98765 43210'} (Mon–Sat, 10 AM – 7 PM IST)</p>
-                  </div>
-                  <div>
-                    <span className="text-[0.68rem] font-semibold text-[#0A0A0A] block uppercase tracking-wider mb-0.5">
-                      REGISTERED OFFICE
-                    </span>
-                    <p>{settings.company_address || 'FLINT A India, Studio House, New Delhi, India'}</p>
-                  </div>
+                  {settings.support_phone && (
+                    <div>
+                      <span className="text-[0.68rem] font-semibold text-[#0A0A0A] block uppercase tracking-wider mb-0.5">
+                        CONCIERGE HELPLINE
+                      </span>
+                      <p>{settings.support_phone} (Mon–Sat, 10 AM – 7 PM IST)</p>
+                    </div>
+                  )}
+                  {settings.company_address && (
+                    <div>
+                      <span className="text-[0.68rem] font-semibold text-[#0A0A0A] block uppercase tracking-wider mb-0.5">
+                        REGISTERED OFFICE
+                      </span>
+                      <p>{settings.company_address}</p>
+                    </div>
+                  )}
                 </div>
                 <p className="text-[0.68rem] text-[#736E65] pt-2 border-t border-[#0A0A0A]/8 leading-relaxed">
                   * All privacy inquiries are formally acknowledged within 48 hours and resolved within 30 days as mandated by Indian statutory regulations.

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag, User, Heart, Menu, X } from 'lucide-react';
 import { SearchModal } from './SearchModal';
@@ -7,6 +7,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useWishlist } from '../context/WishlistContext';
 import { useAuthModal } from '../context/AuthModalContext';
+import { fetchActiveCategories } from '../services/categoryService';
+import { Category } from '../types/database.types';
 
 interface MegaCategoryItem {
   name: string;
@@ -16,47 +18,97 @@ interface MegaCategoryItem {
   badge?: string;
 }
 
-const CATEGORY_COLUMNS: MegaCategoryItem[][] = [
-  // Column 1
+// Default columns based strictly on user's real database categories
+const DEFAULT_REAL_COLUMNS: MegaCategoryItem[][] = [
+  // Column 1: Tops & Essentials
   [
     { name: 'ALL', path: '/shop', bold: true },
-    { name: 'OUTERWEAR', path: '/shop?category=hoodies-jackets' },
-    { name: 'JEANS', path: '/shop?category=jeans' },
-    { name: 'CARGO PANTS', path: '/shop?category=cargo' },
-    { name: 'OVERSHIRTS', path: '/shop?category=shirt' },
-    { name: 'ACCESSORIES', path: '/shop?category=accessories' },
-    { name: 'SUNGLASSES', path: '/shop?category=sunglasses', badge: 'AT ₹ 999' },
-    { name: 'FLINT PLUS', path: '/shop?size=XL', badge: '3XL - 6XL' },
-    { name: 'PRICE DROP', path: '/shop?sort=price_low_high', isRed: true },
+    { name: 'T-SHIRTS', path: '/shop?category=t-shirts' },
+    { name: 'SHIRTS', path: '/shop?category=shirt' },
+    { name: 'HOODIES & JACKETS', path: '/shop?category=hoodies-jackets' },
   ],
-  // Column 2
+  // Column 2: Bottoms
   [
     { name: 'SHOP ALL', path: '/shop' },
-    { name: 'SHIRTS', path: '/shop?category=shirt' },
-    { name: 'TROUSERS', path: '/shop?category=track-pants' },
-    { name: 'JOGGERS', path: '/shop?category=joggers' },
-    { name: 'LUGGAGE', path: '/shop?category=luggage' },
-    { name: 'BAGS', path: '/shop?category=bags' },
-    { name: 'LINEN EDIT', path: '/shop?category=linen-pant' },
-    { name: 'FLINT LUXE', path: '/shop?sort=price_high_low', badge: 'PREMIUM' },
-    { name: 'FESTIVE EDIT', path: '/shop?category=festive' },
+    { name: 'JEANS', path: '/shop?category=jeans' },
+    { name: 'CARGO PANTS', path: '/shop?category=cargo' },
+    { name: 'TRACK PANTS', path: '/shop?category=track-pants' },
+    { name: 'LINEN PANTS', path: '/shop?category=linen-pant' },
   ],
-  // Column 3
+  // Column 3: Curated Drops
   [
-    { name: 'BESTSELLERS', path: '/shop?sort=bestseller' },
-    { name: 'T-SHIRTS | POLO', path: '/shop?category=t-shirts' },
-    { name: 'FOOTWEAR', path: '/shop?category=footwear' },
-    { name: 'SHORTS', path: '/shop?category=shorts' },
-    { name: 'PERFUMES', path: '/shop?category=perfumes', badge: 'FLAT 50% OFF' },
-    { name: 'BELTS', path: '/shop?category=belts' },
-    { name: 'BASICS | CORE LAB', path: '/shop?category=basics' },
-    { name: 'CELEB COLLABS', path: '/shop?category=collabs' },
+    { name: 'BESTSELLERS', path: '/shop?sort=bestseller', badge: 'HOT' },
+    { name: 'NEW DROPS', path: '/shop?sort=newest', badge: 'NEW' },
+    { name: 'PRICE DROP', path: '/shop?sort=price_low_high', isRed: true },
+    { name: 'ARCHIVE', path: '/shop' },
   ],
 ];
 
 export const Header: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchModalOpen, setSearchModalOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchActiveCategories().then((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+  }, []);
+
+  const categoryColumns = useMemo<MegaCategoryItem[][]>(() => {
+    const activeCats = (categories || []).filter((c) => c.is_active);
+
+    if (activeCats.length === 0) {
+      return DEFAULT_REAL_COLUMNS;
+    }
+
+    // Categorize into Tops and Bottoms for clear layout
+    const tops = activeCats.filter((c) =>
+      ['t-shirts', 'shirt', 'hoodies-jackets'].includes(c.slug)
+    );
+    const bottoms = activeCats.filter((c) =>
+      ['jeans', 'cargo', 'track-pants', 'linen-pant'].includes(c.slug)
+    );
+    const other = activeCats.filter(
+      (c) =>
+        !['t-shirts', 'shirt', 'hoodies-jackets', 'jeans', 'cargo', 'track-pants', 'linen-pant'].includes(c.slug)
+    );
+
+    const col1Cats: MegaCategoryItem[] = [
+      ...tops.map((c) => ({
+        name: c.name.toUpperCase(),
+        path: `/shop?category=${encodeURIComponent(c.slug)}`,
+      })),
+      ...other.slice(0, Math.ceil(other.length / 2)).map((c) => ({
+        name: c.name.toUpperCase(),
+        path: `/shop?category=${encodeURIComponent(c.slug)}`,
+      })),
+    ];
+
+    const col2Cats: MegaCategoryItem[] = [
+      ...bottoms.map((c) => ({
+        name: c.name.toUpperCase(),
+        path: `/shop?category=${encodeURIComponent(c.slug)}`,
+      })),
+      ...other.slice(Math.ceil(other.length / 2)).map((c) => ({
+        name: c.name.toUpperCase(),
+        path: `/shop?category=${encodeURIComponent(c.slug)}`,
+      })),
+    ];
+
+    return [
+      [{ name: 'ALL', path: '/shop', bold: true }, ...col1Cats],
+      [{ name: 'SHOP ALL', path: '/shop' }, ...col2Cats],
+      [
+        { name: 'BESTSELLERS', path: '/shop?sort=bestseller', badge: 'HOT' },
+        { name: 'NEW DROPS', path: '/shop?sort=newest', badge: 'NEW' },
+        { name: 'PRICE DROP', path: '/shop?sort=price_low_high', isRed: true },
+        { name: 'ARCHIVE', path: '/shop' },
+      ],
+    ];
+  }, [categories]);
 
   const { itemCount, openCart } = useCart();
   const { user } = useAuth();
@@ -226,9 +278,9 @@ export const Header: React.FC = () => {
 
             {/* Scrollable Category Grid Body */}
             <div className="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto no-scrollbar space-y-6 bg-white">
-              {/* 3-COLUMN CATEGORY GRID (EXACT SNITCH REPLICA) */}
+              {/* 3-COLUMN CATEGORY GRID (CLEAN EDITORIAL HIERARCHY) */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 sm:gap-x-8 md:gap-x-12 gap-y-4 sm:gap-y-5">
-                {CATEGORY_COLUMNS.map((col, colIdx) => (
+                {categoryColumns.map((col, colIdx) => (
                   <div key={colIdx} className="space-y-3.5 sm:space-y-4">
                     {col.map((item, itemIdx) => (
                       <div key={itemIdx}>

@@ -204,7 +204,16 @@ export async function fetchPaginatedProducts(
       .eq('status', 'active');
 
     if (options.category && options.category.trim() !== '') {
-      query = query.ilike('category', `%${options.category.trim()}%`);
+      const catVal = options.category.trim().toLowerCase();
+      if (catVal.includes('track') || catVal.includes('jogger')) {
+        query = query.or('category.ilike.%track%,category.ilike.%jogger%');
+      } else if (catVal === 'shirt' || catVal === 'shirts') {
+        query = query.or('category.eq.shirt,category.eq.shirts');
+      } else if (catVal === 'linen-pant' || catVal === 'linen') {
+        query = query.or('category.ilike.%linen-pant%,category.ilike.%linen%');
+      } else {
+        query = query.ilike('category', `%${catVal}%`);
+      }
     }
 
     if (options.search && options.search.trim() !== '') {

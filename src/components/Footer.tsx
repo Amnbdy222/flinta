@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Truck,
@@ -6,8 +6,6 @@ import {
   ShieldCheck,
   Sparkles,
   Mail,
-  Phone,
-  MapPin,
   ArrowRight,
   CheckCircle2,
   ChevronDown,
@@ -16,9 +14,32 @@ import {
 } from 'lucide-react';
 import { useStoreSettings } from '../context/StoreSettingsContext';
 import { sanitizeEmail } from '../utils/sanitize';
+import { fetchActiveCategories } from '../services/categoryService';
+import { Category } from '../types/database.types';
 
 export const Footer: React.FC = () => {
   const { settings } = useStoreSettings();
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    fetchActiveCategories().then((cats) => {
+      if (cats && cats.length > 0) {
+        setCategories(cats);
+      }
+    });
+  }, []);
+
+  // Default active categories fallback matching user database
+  const fallbackCategories = [
+    { name: 'T-Shirts', slug: 't-shirts' },
+    { name: 'Jeans', slug: 'jeans' },
+    { name: 'Shirt', slug: 'shirt' },
+    { name: 'Cargo', slug: 'cargo' },
+    { name: 'Track Pants', slug: 'track-pants' },
+    { name: 'Hoodies & Jackets', slug: 'hoodies-jackets' },
+    { name: 'Linen Pant', slug: 'linen-pant' },
+  ];
+  const displayCategories = categories.length > 0 ? categories : fallbackCategories;
 
   // Newsletter subscription state
   const [email, setEmail] = useState('');
@@ -49,14 +70,14 @@ export const Footer: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Clean social links from settings or high-converting fallbacks
+  // Clean social links from user settings
   const socialLinks = settings.social_links || {};
   const instagramUrl =
     socialLinks.instagram ||
-    'https://www.instagram.com/flint_a_india?utm_source=ig_web_button_share_sheet&igsi=ZDNlZDc0MzIxNw==';
-  const facebookUrl = socialLinks.facebook || 'https://www.facebook.com';
-  const twitterUrl = socialLinks.twitter || 'https://x.com';
-  const youtubeUrl = socialLinks.youtube || 'https://www.youtube.com';
+    'https://www.instagram.com/flintaindia?stkn=MWVxZHk4ZTBpcHMydQ==';
+  const facebookUrl = socialLinks.facebook;
+  const twitterUrl = socialLinks.twitter;
+  const youtubeUrl = socialLinks.youtube;
 
 
 
@@ -217,117 +238,93 @@ export const Footer: React.FC = () => {
               </div>
 
               <div className="space-y-2 text-xs text-[#5C564E] font-light">
-
-
-                {/* Email */}
-                {settings.support_email && (
-                  <div className="flex items-center space-x-2.5 pt-0.5">
-                    <Mail size={13} className="text-[#0A0A0A] shrink-0" />
-                    <a href={`mailto:${settings.support_email}`} className="hover:text-[#0A0A0A] transition-colors truncate">
-                      {settings.support_email}
-                    </a>
-                  </div>
-                )}
-
-                {/* Phone */}
-                {settings.support_phone && (
-                  <div className="flex items-center space-x-2.5">
-                    <Phone size={13} className="text-[#0A0A0A] shrink-0" />
-                    <a href={`tel:${settings.support_phone}`} className="hover:text-[#0A0A0A] transition-colors">
-                      {settings.support_phone}
-                    </a>
-                  </div>
-                )}
-
-                {/* Location */}
-                {settings.company_address && (
-                  <div className="flex items-start space-x-2.5 pt-0.5">
-                    <MapPin size={13} className="text-[#0A0A0A] shrink-0 mt-0.5" />
-                    <span className="text-[0.7rem] leading-snug">{settings.company_address}</span>
-                  </div>
-                )}
+                {/* Email Support Only */}
+                <div className="flex items-center space-x-2.5 pt-0.5">
+                  <Mail size={13} className="text-[#0A0A0A] shrink-0" />
+                  <a
+                    href={`mailto:${settings.support_email || 'Support@flintaindia.com'}`}
+                    className="hover:text-[#0A0A0A] transition-colors truncate font-medium text-[#0A0A0A]"
+                  >
+                    {settings.support_email || 'Support@flintaindia.com'}
+                  </a>
+                </div>
+                <p className="text-[0.68rem] text-[#736E65] font-light pt-1 leading-snug">
+                  Reach out for order assistance, return requests, or styling queries.
+                </p>
               </div>
             </div>
 
-            {/* ── HIGH-END SOCIAL MEDIA CHANNELS ── */}
+            {/* ── HIGH-END SOCIAL MEDIA CHANNELS (ONLY REAL USER DATA) ── */}
             <div className="space-y-2.5 pt-1">
               <span className="text-[0.68rem] font-bold tracking-[0.25em] uppercase text-[#736E65] block">
                 FOLLOW OUR COMMUNITY
               </span>
               <div className="flex items-center flex-wrap gap-2.5">
                 {/* Instagram Badge */}
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow Flint on Instagram"
-                  title="Instagram @flint_a_india"
-                  className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#E1306C] hover:text-white hover:border-[#E1306C] transition-all duration-300 hover:-translate-y-1 shadow-xs group"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
-                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
-                  </svg>
-                </a>
-
-
+                {instagramUrl && (
+                  <a
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow Flint on Instagram"
+                    title="Instagram @flintaindia"
+                    className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#E1306C] hover:text-white hover:border-[#E1306C] transition-all duration-300 hover:-translate-y-1 shadow-xs group"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+                    </svg>
+                  </a>
+                )}
 
                 {/* X / Twitter Badge */}
-                <a
-                  href={twitterUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow Flint on X"
-                  title="X (Twitter)"
-                  className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#0A0A0A] hover:text-white hover:border-[#0A0A0A] transition-all duration-300 hover:-translate-y-1 shadow-xs"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                  </svg>
-                </a>
+                {twitterUrl && (
+                  <a
+                    href={twitterUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow Flint on X"
+                    title="X (Twitter) @flintaindia"
+                    className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#0A0A0A] hover:text-white hover:border-[#0A0A0A] transition-all duration-300 hover:-translate-y-1 shadow-xs"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                    </svg>
+                  </a>
+                )}
 
                 {/* Facebook Badge */}
-                <a
-                  href={facebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow Flint on Facebook"
-                  title="Facebook"
-                  className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all duration-300 hover:-translate-y-1 shadow-xs"
-                >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </a>
+                {facebookUrl && (
+                  <a
+                    href={facebookUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow Flint on Facebook"
+                    title="Facebook"
+                    className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all duration-300 hover:-translate-y-1 shadow-xs"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                    </svg>
+                  </a>
+                )}
 
-                {/* YouTube Badge */}
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow Flint on YouTube"
-                  title="YouTube"
-                  className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:border-[#FF0000] transition-all duration-300 hover:-translate-y-1 shadow-xs"
-                >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-                  </svg>
-                </a>
-
-                {/* Pinterest Badge */}
-                <a
-                  href="https://www.pinterest.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Follow Flint on Pinterest"
-                  title="Pinterest Moodboards"
-                  className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#E60023] hover:text-white hover:border-[#E60023] transition-all duration-300 hover:-translate-y-1 shadow-xs"
-                >
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.957 1.406-5.957s-.359-.72-.359-1.781c0-1.663.967-2.911 2.171-2.911 1.024 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738a.36.36 0 0 1 .083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.631-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146 1.124.347 2.317.535 3.554.535 6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/>
-                  </svg>
-                </a>
+                {/* YouTube Badge (only if user provided) */}
+                {youtubeUrl && (
+                  <a
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow Flint on YouTube"
+                    title="YouTube"
+                    className="w-9 h-9 rounded-full bg-white border border-[#0A0A0A]/15 text-[#0A0A0A] flex items-center justify-center hover:bg-[#FF0000] hover:text-white hover:border-[#FF0000] transition-all duration-300 hover:-translate-y-1 shadow-xs"
+                  >
+                    <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -351,36 +348,13 @@ export const Footer: React.FC = () => {
               </button>
 
               <ul className={`space-y-2.5 text-xs text-[#5C564E] font-light pt-3 sm:pt-4 ${openSection === 'shop' ? 'block' : 'hidden sm:block'}`}>
-                <li>
-                  <Link to="/shop?category=t-shirts" className="hover:text-[#0A0A0A] transition-colors link-underline">
-                    Oversized T-Shirts
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=shirts" className="hover:text-[#0A0A0A] transition-colors link-underline">
-                    Casual & Linen Shirts
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=cargos" className="hover:text-[#0A0A0A] transition-colors link-underline">
-                    Cargo Pants & Trousers
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=jeans" className="hover:text-[#0A0A0A] transition-colors link-underline">
-                    Baggy & Relaxed Jeans
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=trousers" className="hover:text-[#0A0A0A] transition-colors link-underline">
-                    Korean Fit Trousers
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/shop?category=hoodies" className="hover:text-[#0A0A0A] transition-colors link-underline">
-                    Hoodies & Sweatshirts
-                  </Link>
-                </li>
+                {displayCategories.map((cat) => (
+                  <li key={cat.slug}>
+                    <Link to={`/shop?category=${encodeURIComponent(cat.slug)}`} className="hover:text-[#0A0A0A] transition-colors link-underline">
+                      {cat.name}
+                    </Link>
+                  </li>
+                ))}
                 <li>
                   <Link to="/shop?sort=newest" className="hover:text-[#0A0A0A] transition-colors link-underline flex items-center space-x-1 font-medium text-[#0A0A0A]">
                     <span>New Drops</span>
@@ -556,31 +530,31 @@ export const Footer: React.FC = () => {
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[0.7rem] text-[#736E65] font-light leading-relaxed">
             <Link to="/shop?category=t-shirts" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Oversized T-Shirts for Men
+              Oversized T-Shirts
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
-            <Link to="/shop?category=cargos" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Cargo Pants India
+            <Link to="/shop?category=cargo" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
+              Cargo Pants
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
-            <Link to="/shop?category=shirts" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Casual Linen Shirts
+            <Link to="/shop?category=shirt" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
+              Linen &amp; Cotton Shirts
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
             <Link to="/shop?category=jeans" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Korean Baggy Jeans
+              Straight Fit Jeans
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
-            <Link to="/shop?category=trousers" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Tailored Relaxed Trousers
+            <Link to="/shop?category=track-pants" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
+              Terry Track Pants
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
-            <Link to="/shop?category=hoodies" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Winter Hoodies & Sweatshirts
+            <Link to="/shop?category=hoodies-jackets" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
+              Hoodies &amp; Denim Jackets
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
-            <Link to="/shop?category=t-shirts" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
-              Graphic Streetwear Tees
+            <Link to="/shop?category=linen-pant" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">
+              Premium Linen Pants
             </Link>
             <span className="text-[#0A0A0A]/20">|</span>
             <Link to="/shop" className="hover:text-[#0A0A0A] transition-colors underline-offset-2 hover:underline">

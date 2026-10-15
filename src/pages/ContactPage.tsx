@@ -86,7 +86,15 @@ export const ContactPage: React.FC = () => {
       </div>
 
       {/* MAISON CONCIERGE CONTACT CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+      <div
+        className={`grid grid-cols-1 ${
+          settings.support_phone && settings.company_address
+            ? 'sm:grid-cols-3'
+            : settings.support_phone || settings.company_address
+            ? 'sm:grid-cols-2 max-w-xl mx-auto'
+            : 'max-w-md mx-auto'
+        } gap-3 text-center`}
+      >
         {settings.support_email && (
           <div className="p-4 sm:p-5 bg-white border border-[#EAE8E2] shadow-xs space-y-1.5">
             <Mail size={18} className="mx-auto text-[#0A0A0A]" />
